@@ -1,50 +1,84 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbxBvicwEohuNy72twGhT2r77TZA_XfBa_tUVxmKpQyqLn3dA9zPdgKQk_A8YjLfxtad/exec"; // Replace with actual Google Apps Script URL
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Scoreboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        table { width: 80%; border-collapse: collapse; margin: auto; }
+        th, td { border: 1px solid black; padding: 12px; text-align: center; }
+        th { background-color: #0073e6; color: white; font-weight: bold; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
 
-function fetchScores() {
-    fetch(API_URL)
-        .then(response => response.json())
-        .then(data => {
-            console.log("Data received from API:", data); // Debugging log
+<h1>2025 LOG Draft Challenge Scoreboard</h1>
+<table id="scoreboard">
+    <thead>
+        <tr>
+            <th>League Manager</th>
+            <th>40-Yard Dash</th>
+            <th>Punt</th>
+            <th>3-Point</th>
+            <th>Strongest Arm</th>
+            <th>Beer Pong Tournament</th>
+            <th>Total</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
 
-            if (data.error) {
-                document.querySelector("#scoreboard tbody").innerHTML = `<tr><td colspan="7">${data.error}</td></tr>`;
-                return;
-            }
+<script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbxBvicwEohuNy72twGhT2r77TZA_XfBa_tUVxmKpQyqLn3dA9zPdgKQk_A8YjLfxtad/exec"; // Replace with actual Web App URL
 
-            if (data.data && data.data.length > 1) { 
-                console.log("Final processed data:", data.data); // Debugging log
-                updateTable(data.data); 
-            } else {
-                console.error("No valid data received.");
-                document.querySelector("#scoreboard tbody").innerHTML = `<tr><td colspan="7">No scores available</td></tr>`;
-            }
-        })
-        .catch(error => {
-            console.error("Error fetching scores:", error);
-            document.querySelector("#scoreboard tbody").innerHTML = `<tr><td colspan="7">Error loading scoreboard</td></tr>`;
+    function fetchScores() {
+        fetch(API_URL)
+            .then(response => response.json())
+            .then(data => {
+                console.log("Data received from API:", data); // Debugging log
+
+                if (data.error) {
+                    document.querySelector("#scoreboard tbody").innerHTML = `<tr><td colspan="7">${data.error}</td></tr>`;
+                    return;
+                }
+
+                if (data.data && data.data.length > 1) { 
+                    console.log("Final processed data:", data.data); // Debugging log
+                    updateTable(data.data); 
+                } else {
+                    document.querySelector("#scoreboard tbody").innerHTML = `<tr><td colspan="7">No scores available</td></tr>`;
+                }
+            })
+            .catch(error => {
+                console.error("Error fetching scores:", error);
+                document.querySelector("#scoreboard tbody").innerHTML = `<tr><td colspan="7">Error loading scoreboard</td></tr>`;
+            });
+    }
+
+    function updateTable(data) {
+        const tbody = document.querySelector("#scoreboard tbody");
+        tbody.innerHTML = ""; // Clear existing table rows
+
+        let header = data.shift(); 
+        data.sort((a, b) => b[b.length - 1] - a[a.length - 1]); // Sort by "Total" descending
+        data.unshift(header); // Add header back
+
+        data.slice(1).forEach(row => {
+            let tr = document.createElement("tr");
+            row.forEach(cell => {
+                let td = document.createElement("td");
+                td.textContent = cell || '-';
+                tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
         });
-}
+    }
 
-function updateTable(data) {
-    console.log("Updating table with:", data); // Debugging
+    setInterval(fetchScores, 5000);
+    fetchScores();
+</script>
 
-    const tbody = document.querySelector("#scoreboard tbody");
-    tbody.innerHTML = ""; // Clear existing table rows
-
-    let header = data.shift(); 
-    data.sort((a, b) => b[b.length - 1] - a[a.length - 1]); // Sort by "Total" descending
-    data.unshift(header); // Add header back
-
-    data.slice(1).forEach(row => {
-        let tr = document.createElement("tr");
-        row.forEach(cell => {
-            let td = document.createElement("td");
-            td.textContent = cell || '-';
-            tr.appendChild(td);
-        });
-        tbody.appendChild(tr);
-    });
-}
-
-setInterval(fetchScores, 5000);
-fetchScores();
+</body>
+</html>
