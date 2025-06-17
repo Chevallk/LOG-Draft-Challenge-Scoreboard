@@ -16,12 +16,9 @@
 <body>
 
 <h1>2025 LOG Draft Challenge Scoreboard</h1>
-<table id="scoreboard"></table>
-
-<script>
-    function updateTable(data) {
-        const table = document.getElementById("scoreboard");
-        table.innerHTML = `<tr>
+<table id="scoreboard">
+    <thead>
+        <tr>
             <th>League Manager</th>
             <th>40-Yard Dash</th>
             <th>Punt</th>
@@ -29,32 +26,60 @@
             <th>Strongest Arm</th>
             <th>Beer Pong Tournament</th>
             <th>Total</th>
-        </tr>`;
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
 
-        // Remove header row for sorting
+<script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbwGH0W75k9R7GrUVcrEY00zi0vok8iCEt4exG0i4f01/dev"; // Replace with your actual Google Apps Script URL
+
+    function fetchScores() {
+        fetch(API_URL)
+            .then(response => response.json())
+            .then(data => {
+                console.log("Data received:", data); // Debugging log
+                if (data.error) {
+                    document.querySelector("#scoreboard tbody").innerHTML = `<tr><td colspan="7">${data.error}</td></tr>`;
+                    return;
+                }
+
+                if (data.data && data.data.length > 1) {
+                    updateTable(data.data);
+                } else {
+                    console.error("No valid data received.");
+                    document.querySelector("#scoreboard tbody").innerHTML = `<tr><td colspan="7">No scores available</td></tr>`;
+                }
+            })
+            .catch(error => {
+                console.error("Error fetching scores:", error);
+                document.querySelector("#scoreboard tbody").innerHTML = `<tr><td colspan="7">Error loading scoreboard</td></tr>`;
+            });
+    }
+
+    function updateTable(data) {
+        console.log("Updating table with:", data); // Debugging
+
+        const tbody = document.querySelector("#scoreboard tbody");
+        tbody.innerHTML = ""; // Clear existing table rows
+
         let header = data.shift(); 
         data.sort((a, b) => b[b.length - 1] - a[a.length - 1]); // Sort by "Total" descending
         data.unshift(header); // Add header back
 
         data.slice(1).forEach(row => {
-            let playerRow = `<tr>`;
+            let tr = document.createElement("tr");
             row.forEach(cell => {
-                playerRow += `<td>${cell || '-'}</td>`;
+                let td = document.createElement("td");
+                td.textContent = cell || '-';
+                tr.appendChild(td);
             });
-            playerRow += `</tr>`;
-            table.innerHTML += playerRow;
+            tbody.appendChild(tr);
         });
     }
 
-    // Test data (Replace this with actual API data manually)
-    const testData = [
-        ["League Manager", "40-Yard Dash", "Punt", "3-Point", "Strongest Arm", "Beer Pong Tournament", "Total"],
-        ["John Doe", 5, 8, 12, 10, 6, 41],
-        ["Jane Smith", 7, 10, 8, 9, 8, 42],
-        ["Chris Brown", 6, 7, 14, 12, 7, 46]
-    ];
-
-    updateTable(testData); // Manually inserting test data
+    setInterval(fetchScores, 5000); // Fetch scores every 5 seconds
+    fetchScores();
 </script>
 
 </body>
