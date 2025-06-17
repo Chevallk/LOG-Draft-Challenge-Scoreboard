@@ -29,7 +29,7 @@
         fetch(API_URL)
             .then(response => response.json())
             .then(data => {
-                console.log("Raw API Response:", data); // Debugging log
+                console.log("Raw API Response:", JSON.stringify(data, null, 2)); // Debugging log
 
                 if (!data || data.error) {
                     document.querySelector("#scoreboard tbody").innerHTML = `<tr><td colspan="7">${data.error || "No valid scores available"}</td></tr>`;
@@ -60,12 +60,12 @@
         const tbody = document.querySelector("#scoreboard tbody");
         tbody.innerHTML = ""; // Clear existing table rows
 
-        let header = data[0]; // Keep the header row intact
-        let scores = data.slice(1); // Get the rest of the rows
+        let header = data[0]; // Extract header row
+        let scores = data.slice(1); // Get player data rows
 
         scores = scores.filter(row => row.length === header.length); // Ensure row structure matches header
 
-        scores.sort((a, b) => b[b.length - 1] - a[a.length - 1]); // Sort by "Total" column (highest to lowest)
+        scores.sort((a, b) => parseFloat(b[b.length - 1]) - parseFloat(a[a.length - 1])); // Sort by Total column (highest to lowest)
 
         // Display table header dynamically
         let headerRow = document.querySelector("#table-header");
