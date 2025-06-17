@@ -1,66 +1,98 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbxBvicwEohuNy72twGhT2r77TZA_XfBa_tUVxmKpQyqLn3dA9zPdgKQk_A8YjLfxtad/exec"; // Replace with actual Google Apps Script URL
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LOG Draft Challenge Scoreboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        table { width: 80%; border-collapse: collapse; margin: auto; }
+        th, td { border: 1px solid black; padding: 12px; text-align: center; }
+        th { background-color: #0073e6; color: white; font-weight: bold; cursor: pointer; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+        td { transition: background-color 0.5s ease-in-out; }
+    </style>
+</head>
+<body>
 
-function fetchScores() {
-    fetch(API_URL)
-        .then(response => response.json())
-        .then(data => {
-            console.log("Data received from API:", data); // Debugging log
+<h1>2025 LOG Draft Challenge Scoreboard</h1>
+<table id="scoreboard">
+    <thead>
+        <tr>
+            <th>League Manager</th>
+            <th>40-Yard Dash</th>
+            <th>Punt</th>
+            <th>3-Point</th>
+            <th>Strongest Arm</th>
+            <th>Beer Pong Tournament</th>
+            <th onclick="sortTable()">Total 🔼</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
 
-            if (!data || data.error) {
-                document.querySelector("#scoreboard tbody").innerHTML = `<tr><td colspan="7">${data.error || "No valid scores available"}</td></tr>`;
-                return;
-            }
+<script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbxBvicwEohuNy72twGhT2r77TZA_XfBa_tUVxmKpQyqLn3dA9zPdgKQk_A8YjLfxtad/exec"; // Replace with actual Google Apps Script URL
 
-            if (data.data && data.data.length > 1) { 
-                console.log("Final processed data:", data.data); // Debugging log
-                updateTable(data.data); 
-            } else {
-                console.error("No valid data received.");
-                document.querySelector("#scoreboard tbody").innerHTML = `<tr><td colspan="7">No scores available</td></tr>`;
-            }
-        })
-        .catch(error => {
-            console.error("Error fetching scores:", error);
-            document.querySelector("#scoreboard tbody").innerHTML = `<tr><td colspan="7">Error loading scoreboard</td></tr>`;
-        });
-}
+    function fetchScores() {
+        fetch(API_URL)
+            .then(response => response.json())
+            .then(data => {
+                console.log("Data received from API:", data); // Debugging log
 
-function updateTable(data) {
-    console.log("Updating table with:", data); // Debugging
+                if (!data || data.error) {
+                    document.querySelector("#scoreboard tbody").innerHTML = `<tr><td colspan="7">${data.error || "No valid scores available"}</td></tr>`;
+                    return;
+                }
 
-    if (!data || data.length < 2) {
-        document.querySelector("#scoreboard tbody").innerHTML = `<tr><td colspan="7">No scores available</td></tr>`;
-        return;
+                if (data.data && data.data.length > 1) { 
+                    console.log("Final processed data:", data.data); // Debugging log
+                    updateTable(data.data); 
+                } else {
+                    document.querySelector("#scoreboard tbody").innerHTML = `<tr><td colspan="7">No scores available</td></tr>`;
+                }
+            })
+            .catch(error => {
+                console.error("Error fetching scores:", error);
+                document.querySelector("#scoreboard tbody").innerHTML = `<tr><td colspan="7">Error loading scoreboard</td></tr>`;
+            });
     }
 
-    const tbody = document.querySelector("#scoreboard tbody");
-    tbody.innerHTML = ""; // Clear existing table rows
+    function updateTable(data) {
+        console.log("Updating table with:", data); // Debugging
 
-    let header = data[0]; // Keep the header row intact
-    let scores = data.slice(1); // Get the rest of the rows
+        if (!data || data.length < 2) {
+            document.querySelector("#scoreboard tbody").innerHTML = `<tr><td colspan="7">No scores available</td></tr>`;
+            return;
+        }
 
-    scores.sort((a, b) => b[b.length - 1] - a[a.length - 1]); // Sort by Total column (highest to lowest)
+        const tbody = document.querySelector("#scoreboard tbody");
+        tbody.innerHTML = ""; // Clear existing table rows
 
-    // Add header back to table
-    let headerRow = document.createElement("tr");
-    header.forEach(cell => {
-        let th = document.createElement("th");
-        th.textContent = cell;
-        headerRow.appendChild(th);
-    });
-    tbody.appendChild(headerRow);
+        let header = data[0]; // Keep the header row intact
+        let scores = data.slice(1); // Get the rest of the rows
 
-    // Process player scores
-    scores.forEach(row => {
-        let tr = document.createElement("tr");
-        row.forEach(cell => {
-            let td = document.createElement("td");
-            td.textContent = cell || '-';
-            tr.appendChild(td);
+        scores.sort((a, b) => b[b.length - 1] - a[a.length - 1]); // Sort by Total column (highest to lowest)
+
+        // Process player scores
+        scores.forEach(row => {
+            let tr = document.createElement("tr");
+            row.forEach(cell => {
+                let td = document.createElement("td");
+                td.textContent = cell || '-';
+                tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
         });
-        tbody.appendChild(tr);
-    });
-}
+    }
 
-setInterval(fetchScores, 5000);
-fetchScores();
+    function sortTable() {
+        fetchScores(); // Re-fetch scores to ensure sorting is correct
+    }
+
+    setInterval(fetchScores, 5000);
+    fetchScores();
+</script>
+
+</body>
+</html>
