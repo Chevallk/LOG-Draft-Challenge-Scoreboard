@@ -19,21 +19,31 @@
 <table id="scoreboard"></table>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbxBvicwEohuNy72twGhT2r77TZA_XfBa_tUVxmKpQyqLn3dA9zPdgKQk_A8YjLfxtad/execL"; // Replace with actual Google Apps Script URL
+    const API_URL = "https://script.google.com/macros/s/AKfycbxBvicwEohuNy72twGhT2r77TZA_XfBa_tUVxmKpQyqLn3dA9zPdgKQk_A8YjLfxtad/exec"; // Replace with actual Google Apps Script URL
     let lastData = [];
 
     function fetchScores() {
         fetch(API_URL)
             .then(response => response.json())
             .then(data => {
-                console.log("Fetched Data:", data); // Debugging log
+                console.log("Data received:", data); // Debugging log
+
+                if (data.error) {
+                    document.getElementById("scoreboard").innerHTML = `<tr><td colspan="7">${data.error}</td></tr>`;
+                    return;
+                }
+
                 if (data.data && data.data.length > 1) { 
                     updateTable(data.data); 
                 } else {
                     console.error("No valid data received. Check Google Sheets.");
+                    document.getElementById("scoreboard").innerHTML = `<tr><td colspan="7">No scores available</td></tr>`;
                 }
             })
-            .catch(error => console.error("Error fetching scores:", error));
+            .catch(error => {
+                console.error("Error fetching scores:", error);
+                document.getElementById("scoreboard").innerHTML = `<tr><td colspan="7">Error loading scoreboard</td></tr>`;
+            });
     }
 
     function updateTable(data) {
