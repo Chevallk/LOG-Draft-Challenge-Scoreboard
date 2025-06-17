@@ -10,7 +10,6 @@
         th, td { border: 1px solid black; padding: 12px; text-align: center; }
         th { background-color: #0073e6; color: white; font-weight: bold; cursor: pointer; }
         tr:nth-child(even) { background-color: #f2f2f2; }
-        td { transition: background-color 0.5s ease-in-out; }
     </style>
 </head>
 <body>
@@ -24,20 +23,20 @@
 </table>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbxBvicwEohuNy72twGhT2r77TZA_XfBa_tUVxmKpQyqLn3dA9zPdgKQk_A8YjLfxtad/exec"; // Replace with actual Google Apps Script URL
+    const API_URL = "https://script.google.com/macros/s/AKfycbxBvicwEohuNy72twGhT2r77TZA_XfBa_tUVxmKpQyqLn3dA9zPdgKQk_A8YjLfxtad/exec"; // Replace with actual Web App URL
 
     function fetchScores() {
         fetch(API_URL)
             .then(response => response.json())
             .then(data => {
-                console.log("Data received from API:", data); // Debugging log
+                console.log("Raw API Response:", data); // Debugging log
 
                 if (!data || data.error) {
                     document.querySelector("#scoreboard tbody").innerHTML = `<tr><td colspan="7">${data.error || "No valid scores available"}</td></tr>`;
                     return;
                 }
 
-                if (data.data && data.data.length > 1) { 
+                if (data.data && Array.isArray(data.data) && data.data.length > 1) { 
                     console.log("Final processed data:", data.data); // Debugging log
                     updateTable(data.data); 
                 } else {
