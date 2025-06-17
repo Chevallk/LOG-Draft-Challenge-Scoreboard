@@ -6,7 +6,6 @@
     <title>Live Scoreboard</title>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; }
-        h1 { margin-bottom: 20px; }
         table { width: 80%; border-collapse: collapse; margin: auto; }
         th, td { border: 1px solid black; padding: 12px; text-align: center; }
         th { background-color: #0073e6; color: white; font-weight: bold; }
@@ -20,16 +19,26 @@
 <table id="scoreboard"></table>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbxBvicwEohuNy72twGhT2r77TZA_XfBa_tUVxmKpQyqLn3dA9zPdgKQk_A8YjLfxtad/exec"; // Replace with actual Google Apps Script URL
+    const API_URL = "https://script.google.com/macros/s/AKfycbxBvicwEohuNy72twGhT2r77TZA_XfBa_tUVxmKpQyqLn3dA9zPdgKQk_A8YjLfxtad/execL"; // Replace with actual Google Apps Script URL
     let lastData = [];
 
     function fetchScores() {
         fetch(API_URL)
             .then(response => response.json())
-            .then(data => updateTable(data.data));
+            .then(data => {
+                console.log("Fetched Data:", data); // Debugging log
+                if (data.data && data.data.length > 1) { 
+                    updateTable(data.data); 
+                } else {
+                    console.error("No valid data received. Check Google Sheets.");
+                }
+            })
+            .catch(error => console.error("Error fetching scores:", error));
     }
 
     function updateTable(data) {
+        console.log("Updating table with:", data); // Debugging
+
         const table = document.getElementById("scoreboard");
         table.innerHTML = `<tr>
             <th>League Manager</th>
@@ -41,13 +50,18 @@
             <th>Total</th>
         </tr>`;
 
-        data.slice(1).forEach((row, index) => {
+        if (!data || data.length < 2) {
+            table.innerHTML += `<tr><td colspan="7">No scores available</td></tr>`;
+            return;
+        }
+
+        data.slice(1).forEach(row => {
             let total = row[row.length - 1];
-            let rankColor = total >= 40 ? "#4CAF50" : total <= 20 ? "#FF6347" : "white"; // Green for high, red for low
+            let rankColor = total >= 40 ? "#4CAF50" : total <= 20 ? "#FF6347" : "white"; // Green for high scores, red for low scores
 
             let playerRow = `<tr style="background-color: ${rankColor};"><td>${row[0]}</td>`;
             for (let i = 1; i < row.length; i++) {
-                let changed = lastData[index] && lastData[index][i] !== row[i] ? "background-color: yellow;" : "";
+                let changed = lastData.length && lastData[i] && lastData[i] !== row[i] ? "background-color: yellow;" : "";
                 playerRow += `<td style="${changed}">${row[i] || '-'}</td>`;
             }
             playerRow += `</tr>`;
