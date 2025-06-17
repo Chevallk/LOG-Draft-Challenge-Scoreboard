@@ -18,15 +18,7 @@
 <h1>2025 LOG Draft Challenge Scoreboard</h1>
 <table id="scoreboard">
     <thead>
-        <tr>
-            <th>League Manager</th>
-            <th>40-Yard Dash</th>
-            <th>Punt</th>
-            <th>3-Point</th>
-            <th>Strongest Arm</th>
-            <th>Beer Pong Tournament</th>
-            <th onclick="sortTable()">Total 🔼</th>
-        </tr>
+        <tr id="table-header"></tr>
     </thead>
     <tbody></tbody>
 </table>
@@ -72,7 +64,18 @@
         let header = data[0]; // Keep the header row intact
         let scores = data.slice(1); // Get the rest of the rows
 
-        scores.sort((a, b) => b[b.length - 1] - a[a.length - 1]); // Sort by Total column (highest to lowest)
+        scores = scores.filter(row => row.length === header.length); // Ensure row structure matches header
+
+        scores.sort((a, b) => b[b.length - 1] - a[a.length - 1]); // Sort by "Total" column (highest to lowest)
+
+        // Display table header dynamically
+        let headerRow = document.querySelector("#table-header");
+        headerRow.innerHTML = ""; 
+        header.forEach(cell => {
+            let th = document.createElement("th");
+            th.textContent = cell;
+            headerRow.appendChild(th);
+        });
 
         // Process player scores
         scores.forEach(row => {
@@ -84,10 +87,6 @@
             });
             tbody.appendChild(tr);
         });
-    }
-
-    function sortTable() {
-        fetchScores(); // Re-fetch scores to ensure sorting is correct
     }
 
     setInterval(fetchScores, 5000);
