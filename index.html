@@ -31,17 +31,12 @@
             .then(data => {
                 console.log("Raw API Response:", JSON.stringify(data, null, 2)); // Debugging log
 
-                if (!data || data.error) {
-                    document.querySelector("#scoreboard tbody").innerHTML = `<tr><td colspan="7">${data.error || "No valid scores available"}</td></tr>`;
+                if (!data || !data.data || data.data.length < 2) {
+                    document.querySelector("#scoreboard tbody").innerHTML = `<tr><td colspan="7">No valid scores available</td></tr>`;
                     return;
                 }
 
-                if (data.data && Array.isArray(data.data) && data.data.length > 1) { 
-                    console.log("Final processed data:", data.data); // Debugging log
-                    updateTable(data.data); 
-                } else {
-                    document.querySelector("#scoreboard tbody").innerHTML = `<tr><td colspan="7">No scores available</td></tr>`;
-                }
+                updateTable(data.data);
             })
             .catch(error => {
                 console.error("Error fetching scores:", error);
@@ -50,9 +45,9 @@
     }
 
     function updateTable(data) {
-        console.log("Updating table with:", data); // Debugging
+        console.log("Formatted data for table:", JSON.stringify(data, null, 2)); // Debugging
 
-        if (!data || data.length < 2) {
+        if (!Array.isArray(data) || data.length < 2) {
             document.querySelector("#scoreboard tbody").innerHTML = `<tr><td colspan="7">No scores available</td></tr>`;
             return;
         }
@@ -64,8 +59,7 @@
         let scores = data.slice(1); // Get player data rows
 
         scores = scores.filter(row => row.length === header.length); // Ensure row structure matches header
-
-        scores.sort((a, b) => parseFloat(b[b.length - 1]) - parseFloat(a[a.length - 1])); // Sort by Total column (highest to lowest)
+        scores.sort((a, b) => parseFloat(b[b.length - 1]) - parseFloat(a[a.length - 1])); // Sort by Total column
 
         // Display table header dynamically
         let headerRow = document.querySelector("#table-header");
