@@ -1,72 +1,71 @@
-<style>
-  body {
-    background-color: #121212;
-    color: #fff;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    padding: 2em;
-    margin: 0;
-  }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Draft Challenge Scoreboard</title>
+</head>
+<body>
+  <h1>Draft Challenge Leaderboard</h1>
 
-  header {
-    text-align: center;
-    margin-bottom: 2em;
-  }
+  <table id="scoreboard">
+    <thead>
+      <tr id="table-header"></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 
-  header img {
-    max-width: 240px;
-    margin-bottom: 1em;
-  }
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const API_URL = "https://script.google.com/macros/s/AKfycbxBvicwEohuNy72twGhT2r77TZA_XfBa_tUVxmKpQyqLn3dA9zPdgKQk_A8YjLfxtad/exec";
 
-  h1 {
-    font-size: 2em;
-    margin: 0;
-    color: #e11d48; /* ESPN red */
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
+      function fetchScores() {
+        fetch(API_URL)
+          .then(response => response.json())
+          .then(data => {
+            if (!Array.isArray(data) || data.length < 2) {
+              showMessage("No scores found.");
+              return;
+            }
+            updateTable(data);
+          })
+          .catch(() => showMessage("Failed to load scores."));
+      }
 
-  table {
-    width: 95%;
-    max-width: 1000px;
-    margin: 0 auto;
-    border-collapse: collapse;
-    border-radius: 6px;
-    overflow: hidden;
-    box-shadow: 0 0 12px rgba(0,0,0,0.2);
-  }
+      function showMessage(msg) {
+        document.getElementById("table-header").innerHTML = "";
+        document.querySelector("#scoreboard tbody").innerHTML = `<tr><td colspan="7">${msg}</td></tr>`;
+      }
 
-  th {
-    background-color: #1f1f1f;
-    color: #e11d48;
-    padding: 14px 10px;
-    font-size: 0.9em;
-    text-align: left;
-    border-bottom: 2px solid #e11d48;
-  }
+      function updateTable(data) {
+        const header = data[0];
+        const scores = data.slice(1).filter(row => row.length === header.length && !isNaN(row.at(-1)))
+                                   .sort((a, b) => b.at(-1) - a.at(-1));
 
-  td {
-    padding: 12px 10px;
-    font-size: 0.85em;
-    border-bottom: 1px solid #333;
-  }
+        const tableHeader = document.getElementById("table-header");
+        tableHeader.innerHTML = "";
+        header.forEach(title => {
+          const th = document.createElement("th");
+          th.textContent = title;
+          tableHeader.appendChild(th);
+        });
 
-  tr:hover {
-    background-color: #1a1a1a;
-  }
+        const tbody = document.querySelector("#scoreboard tbody");
+        tbody.innerHTML = "";
+        scores.forEach((row, i) => {
+          const tr = document.createElement("tr");
+          row.forEach((cell, j) => {
+            const td = document.createElement("td");
+            td.textContent = cell ?? "-";
+            if (i === 0 && j === 0) td.textContent = "👑 " + cell;
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        });
+      }
 
-  tr:first-child td:first-child {
-    font-weight: bold;
-    color: #ffd700;
-  }
-
-  .crown {
-    font-size: 1.1em;
-  }
-
-  @media (max-width: 600px) {
-    th, td {
-      font-size: 0.75em;
-      padding: 10px 6px;
-    }
-  }
-</style>
+      fetchScores();
+      setInterval(fetchScores, 5000);
+    });
+  </script>
+</body>
+</html>
