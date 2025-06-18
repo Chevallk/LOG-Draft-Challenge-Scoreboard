@@ -65,37 +65,66 @@
       color: #bba168;
     }
 
+    #trash-talk-chat {
+      max-width: 600px;
+      margin: 2em auto;
+      border: 2px solid #bba168;
+      background: #121212;
+      padding: 1em;
+      border-radius: 6px;
+      box-shadow: 0 0 10px rgba(187, 161, 104, 0.3);
+    }
+
+    #chat-messages {
+      max-height: 200px;
+      overflow-y: auto;
+      background: #1a1a1a;
+      padding: 0.75em;
+      margin-bottom: 1em;
+      font-size: 0.9em;
+      color: #fff;
+    }
+
+    #chat-messages p {
+      margin: 0.3em 0;
+    }
+
+    #chat-form {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    #chat-form input {
+      padding: 0.5em;
+      flex: 1;
+      background: #000;
+      color: #fff;
+      border: 1px solid #bba168;
+    }
+
+    #chat-form button {
+      background: #bba168;
+      border: none;
+      color: #000;
+      padding: 0.5em 1em;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
     @media (max-width: 768px) {
       header h1 {
         font-size: 1.4em;
       }
-
-      table {
-        font-size: 0.85em;
-      }
-
-      th, td {
-        padding: 10px 6px;
-      }
+      table { font-size: 0.85em; }
+      th, td { padding: 10px 6px; }
     }
 
     @media (max-width: 480px) {
-      body {
-        padding: 1em;
-      }
-
-      header h1 {
-        font-size: 1.2em;
-      }
-
-      table {
-        font-size: 0.75em;
-        box-shadow: none;
-      }
-
-      th, td {
-        padding: 8px 5px;
-      }
+      body { padding: 1em; }
+      header h1 { font-size: 1.2em; }
+      table { font-size: 0.75em; box-shadow: none; }
+      th, td { padding: 8px 5px; }
     }
   </style>
 </head>
@@ -111,10 +140,20 @@
       </thead>
       <tbody></tbody>
     </table>
+
+    <div id="trash-talk-chat">
+      <div id="chat-messages"></div>
+      <form id="chat-form">
+        <input type="text" id="chat-name" placeholder="Name" required />
+        <input type="text" id="chat-text" placeholder="Talk your trash…" required />
+        <button type="submit">Send 💬</button>
+      </form>
+    </div>
   </main>
 
   <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbxBvicwEohuNy72twGhT2r77TZA_XfBa_tUVxmKpQyqLn3dA9zPdgKQk_A8YjLfxtad/exec";
+    const CHAT_API = "https://script.google.com/macros/s/AKfycbzMjjIwBWvjinpn8yXBDr4R1QwD1jJO4_wRsMTroP9VUQRS7x-svb34AxlZoRkwbWLX/exec";
     let previousRanks = {};
 
     function fetchScores() {
@@ -180,9 +219,48 @@
       previousRanks = newRanks;
     }
 
+    // Live Chat Logic
+    const chatForm = document.getElementById("chat-form");
+    const chatInput = document.getElementById("chat-text");
+    const chatName = document.getElementById("chat-name");
+    const chatMessages = document.getElementById("chat-messages");
+
+    chatForm.addEventListener("submit", e => {
+      e.preventDefault();
+      const name = chatName.value.trim();
+      const text = chatInput.value.trim();
+      if (!name || !text) return;
+
+      fetch(CHAT_API, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `name=${encodeURIComponent(name)}&message=${encodeURIComponent(text)}`
+      }).then(() => {
+        chatInput.value = "";
+        fetchMessages();
+      });
+    });
+
+    function fetchMessages() {
+      fetch(CHAT_API)
+        .then(res => res.json())
+        .then(data => {
+          chatMessages.innerHTML = "";
+          const recent = data.slice(-20);
+          recent.forEach(([name, message]) => {
+            const p = document.createElement("p");
+            p.textContent = `${name}: ${message}`;
+            chatMessages.appendChild(p);
+          });
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+        });
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
       fetchScores();
+      fetchMessages();
       setInterval(fetchScores, 5000);
+      setInterval(fetchMessages, 7000);
     });
   </script>
 </body>
