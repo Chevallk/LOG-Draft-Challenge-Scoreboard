@@ -17,7 +17,7 @@
     header img {
       max-width: 300px;
       margin-bottom: 1.5em;
-      filter: drop-shadow(0 0 5px #FFD700);
+      filter: drop-shadow(0 0 10px #FFD700);
     }
 
     h1 {
@@ -58,11 +58,73 @@
     .crown {
       filter: drop-shadow(0 0 5px gold);
     }
+
+    #trash-talk-submit {
+      margin: 3em auto 1em;
+    }
+
+    #trashForm {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 2em;
+    }
+
+    #trashForm input {
+      padding: 10px;
+      font-size: 0.7em;
+      width: 200px;
+      background: #000;
+      border: 2px solid #FFD700;
+      color: #FFD700;
+      font-family: 'Press Start 2P', monospace;
+    }
+
+    #trashForm button {
+      background: #FFD700;
+      color: #000;
+      font-weight: bold;
+      border: none;
+      padding: 10px 15px;
+      cursor: pointer;
+      font-family: 'Press Start 2P', monospace;
+    }
+
+    #trash-talk-feed {
+      width: 90%;
+      margin: 2em auto;
+      padding: 1em;
+      border: 2px solid #FFD700;
+      background: #111;
+      color: #FFD700;
+      font-size: 0.7em;
+      height: 100px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 0 10px #FFD700;
+    }
+
+    #trash-talk-messages {
+      position: absolute;
+      animation: scrollText 20s linear infinite;
+    }
+
+    @keyframes scrollText {
+      0% { top: 100%; }
+      100% { top: -100%; }
+    }
+
+    #trash-talk-messages p {
+      margin: 0.5em 0;
+      white-space: nowrap;
+      text-shadow: 0 0 3px #FFD700;
+    }
   </style>
 </head>
 <body>
   <header>
-    <img src="https://freeimage.host/i/Fna3boP" alt="League Logo" />
+    <img src="YOUR_LOGO_URL_HERE" alt="League Logo" />
     <h1>Draft Challenge Leaderboard</h1>
   </header>
 
@@ -73,10 +135,24 @@
     <tbody></tbody>
   </table>
 
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const API_URL = "https://script.google.com/macros/s/AKfycbxBvicwEohuNy72twGhT2r77TZA_XfBa_tUVxmKpQyqLn3dA9zPdgKQk_A8YjLfxtad/exec";
+  <div id="trash-talk-submit">
+    <form id="trashForm">
+      <input type="text" id="name" placeholder="Your name" required />
+      <input type="text" id="message" placeholder="Talk that trash..." required />
+      <button type="submit">Send 🔥</button>
+    </form>
+  </div>
 
+  <div id="trash-talk-feed">
+    <div id="trash-talk-messages"></div>
+  </div>
+
+  <script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbxBvicwEohuNy72twGhT2r77TZA_XfBa_tUVxmKpQyqLn3dA9zPdgKQk_A8YjLfxtad/exec";
+    const TRASH_POST_URL = API_URL;
+    const TRASH_GET_URL = API_URL + "?getTrash=true";
+
+    document.addEventListener("DOMContentLoaded", () => {
       function fetchScores() {
         fetch(API_URL)
           .then(response => response.json())
@@ -91,24 +167,21 @@
       }
 
       function showMessage(msg) {
-        const header = document.querySelector("#table-header");
-        const tbody = document.querySelector("#scoreboard tbody");
-        if (header) header.innerHTML = "";
-        if (tbody) tbody.innerHTML = `<tr><td colspan="7">${msg}</td></tr>`;
+        document.querySelector("#table-header").innerHTML = "";
+        document.querySelector("#scoreboard tbody").innerHTML = `<tr><td colspan="7">${msg}</td></tr>`;
       }
 
       function updateTable(data) {
         const header = data[0];
-        const scores = data.slice(1)
-          .filter(row => row.length === header.length && !isNaN(parseFloat(row[row.length - 1])))
-          .sort((a, b) => b[b.length - 1] - a[a.length - 1]);
+        const scores = data.slice(1).filter(r => r.length === header.length && !isNaN(r[r.length - 1]))
+                                 .sort((a, b) => b[b.length - 1] - a[a.length - 1]);
 
-        const tableHeader = document.querySelector("#table-header");
-        tableHeader.innerHTML = "";
+        const thead = document.querySelector("#table-header");
+        thead.innerHTML = "";
         header.forEach(title => {
           const th = document.createElement("th");
           th.textContent = title;
-          tableHeader.appendChild(th);
+          thead.appendChild(th);
         });
 
         const tbody = document.querySelector("#scoreboard tbody");
@@ -128,9 +201,20 @@
         });
       }
 
-      fetchScores();
-      setInterval(fetchScores, 5000);
-    });
-  </script>
-</body>
-</html>
+      function fetchTrashTalk() {
+        fetch(TRASH_GET_URL)
+          .then(res => res.json())
+          .then(data => {
+            const container = document.getElementById("trash-talk-messages");
+            container.innerHTML = "";
+            data.forEach(([name, msg]) => {
+              if (name && msg) {
+                const p = document.createElement("p");
+                p.textContent = `${name}: “${msg}”`;
+                container.appendChild(p);
+              }
+            });
+          });
+      }
+
+      const form = document.getElementBy
