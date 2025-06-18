@@ -73,25 +73,19 @@
       font-weight: bold;
     }
 
-    @media (max-width: 768px) {
-      th, td {
-        font-size: 0.9em;
-        padding: 12px;
-      }
+    .badge {
+      margin-left: 6px;
+      font-size: 1em;
+    }
 
-      header h1 {
-        font-size: 1.8em;
-      }
+    @media (max-width: 768px) {
+      th, td { font-size: 0.9em; padding: 12px; }
+      header h1 { font-size: 1.8em; }
     }
 
     @media (max-width: 480px) {
-      table {
-        font-size: 0.8em;
-      }
-
-      th, td {
-        padding: 10px 6px;
-      }
+      table { font-size: 0.8em; }
+      th, td { padding: 10px 6px; }
     }
   </style>
 </head>
@@ -135,6 +129,17 @@
       const tableHeader = document.getElementById("table-header");
       const tableBody = document.querySelector("#scoreboard tbody");
 
+      // Get best score per stat column
+      const bestIndex = {};
+      for (let i = 1; i < headers.length - 1; i++) {
+        let max = -Infinity;
+        rows.forEach(row => {
+          const val = parseFloat(row[i]);
+          if (!isNaN(val) && val > max) max = val;
+        });
+        bestIndex[i] = max;
+      }
+
       tableHeader.innerHTML = "";
       headers.forEach(title => {
         const th = document.createElement("th");
@@ -151,11 +156,24 @@
         const tr = document.createElement("tr");
         row.forEach((cell, j) => {
           const td = document.createElement("td");
-          td.textContent = cell ?? "-";
 
           if (i === 0 && j === 0) {
             td.textContent = `👑 ${cell}`;
             td.classList.add("crown");
+          } else {
+            td.textContent = cell ?? "-";
+          }
+
+          // Category badge logic
+          if (j in bestIndex && parseFloat(row[j]) === bestIndex[j]) {
+            let badge = "";
+            const col = headers[j].toLowerCase();
+            if (col.includes("dash")) badge = "🏃";
+            else if (col.includes("punt")) badge = "🏈";
+            else if (col.includes("3-point") || col.includes("3 point")) badge = "🏀";
+            else if (col.includes("strongest") || col.includes("arm")) badge = "💪";
+            else if (col.includes("beer") || col.includes("pong")) badge = "🏓"; // updated to ping pong
+            if (badge) td.innerHTML += ` <span class="badge">${badge}</span>`;
           }
 
           tr.appendChild(td);
