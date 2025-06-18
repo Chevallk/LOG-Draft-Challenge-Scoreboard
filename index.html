@@ -1,136 +1,72 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Draft Challenge Arcade Scoreboard</title>
-  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
-  <style>
-    body {
-      background: radial-gradient(circle at top center, #111 0%, #000 80%);
-      color: #FFD700;
-      font-family: 'Press Start 2P', monospace;
-      padding: 2em;
-      text-align: center;
-      overflow-x: hidden;
-    }
+<style>
+  body {
+    background-color: #121212;
+    color: #fff;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding: 2em;
+    margin: 0;
+  }
 
-    header img {
-      max-width: 300px;
-      margin-bottom: 1.5em;
-      filter: drop-shadow(0 0 10px #FFD700);
-    }
+  header {
+    text-align: center;
+    margin-bottom: 2em;
+  }
 
-    h1 {
-      color: #FFD700;
-      font-size: 1.5em;
-      margin-bottom: 1em;
-      text-shadow: 0 0 5px #fff, 0 0 10px #FFD700;
-    }
+  header img {
+    max-width: 240px;
+    margin-bottom: 1em;
+  }
 
-    table {
-      margin: 0 auto;
-      width: 90%;
-      border-collapse: collapse;
-      box-shadow: 0 0 30px #FFD700;
-    }
+  h1 {
+    font-size: 2em;
+    margin: 0;
+    color: #e11d48; /* ESPN red */
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
 
+  table {
+    width: 95%;
+    max-width: 1000px;
+    margin: 0 auto;
+    border-collapse: collapse;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 0 12px rgba(0,0,0,0.2);
+  }
+
+  th {
+    background-color: #1f1f1f;
+    color: #e11d48;
+    padding: 14px 10px;
+    font-size: 0.9em;
+    text-align: left;
+    border-bottom: 2px solid #e11d48;
+  }
+
+  td {
+    padding: 12px 10px;
+    font-size: 0.85em;
+    border-bottom: 1px solid #333;
+  }
+
+  tr:hover {
+    background-color: #1a1a1a;
+  }
+
+  tr:first-child td:first-child {
+    font-weight: bold;
+    color: #ffd700;
+  }
+
+  .crown {
+    font-size: 1.1em;
+  }
+
+  @media (max-width: 600px) {
     th, td {
-      border: 2px solid #FFD700;
-      padding: 12px 10px;
       font-size: 0.75em;
-      text-shadow: 0 0 3px #FFD700;
+      padding: 10px 6px;
     }
-
-    th {
-      background: #000;
-      color: #ffffff;
-    }
-
-    tr:nth-child(even) {
-      background: rgba(255, 215, 0, 0.05);
-    }
-
-    tr:hover {
-      background-color: rgba(255, 255, 255, 0.1);
-      transition: background 0.3s ease-in-out;
-    }
-
-    .crown {
-      filter: drop-shadow(0 0 5px gold);
-    }
-  </style>
-</head>
-<body>
-  <header>
-    <img src="YOUR_LOGO_URL_HERE" alt="League Logo" />
-    <h1>Draft Challenge Leaderboard</h1>
-  </header>
-
-  <table id="scoreboard">
-    <thead>
-      <tr id="table-header"></tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      const API_URL = "https://script.google.com/macros/s/AKfycbxBvicwEohuNy72twGhT2r77TZA_XfBa_tUVxmKpQyqLn3dA9zPdgKQk_A8YjLfxtad/exec";
-
-      function fetchScores() {
-        fetch(API_URL)
-          .then(response => response.json())
-          .then(data => {
-            if (!Array.isArray(data) || data.length < 2) {
-              showMessage("NO SCORES FOUND");
-              return;
-            }
-            updateTable(data);
-          })
-          .catch(() => showMessage("API ERROR"));
-      }
-
-      function showMessage(msg) {
-        const header = document.querySelector("#table-header");
-        const tbody = document.querySelector("#scoreboard tbody");
-        if (header) header.innerHTML = "";
-        if (tbody) tbody.innerHTML = `<tr><td colspan="7">${msg}</td></tr>`;
-      }
-
-      function updateTable(data) {
-        const header = data[0];
-        const scores = data.slice(1)
-          .filter(row => row.length === header.length && !isNaN(parseFloat(row[row.length - 1])))
-          .sort((a, b) => b[b.length - 1] - a[a.length - 1]);
-
-        const tableHeader = document.querySelector("#table-header");
-        tableHeader.innerHTML = "";
-        header.forEach(title => {
-          const th = document.createElement("th");
-          th.textContent = title;
-          tableHeader.appendChild(th);
-        });
-
-        const tbody = document.querySelector("#scoreboard tbody");
-        tbody.innerHTML = "";
-        scores.forEach((row, i) => {
-          const tr = document.createElement("tr");
-          row.forEach((cell, j) => {
-            const td = document.createElement("td");
-            td.textContent = cell ?? "-";
-            if (i === 0 && j === 0) {
-              td.innerHTML = "👑 " + cell;
-              td.classList.add("crown");
-            }
-            tr.appendChild(td);
-          });
-          tbody.appendChild(tr);
-        });
-      }
-
-      fetchScores();
-      setInterval(fetchScores, 5000);
-    });
-  </script>
-</body>
-</html>
+  }
+</style>
