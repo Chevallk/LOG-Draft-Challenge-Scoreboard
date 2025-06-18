@@ -1,76 +1,86 @@
-<script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Draft Challenge Scoreboard</title>
+</head>
+<body>
+  <table id="scoreboard">
+    <thead>
+      <tr id="table-header"></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
     document.addEventListener("DOMContentLoaded", () => {
-        const API_URL = "https://script.google.com/macros/s/AKfycbxBvicwEohuNy72twGhT2r77TZA_XfBa_tUVxmKpQyqLn3dA9zPdgKQk_A8YjLfxtad/exec";
+      const API_URL = "https://script.google.com/macros/s/AKfycbxBvicwEohuNy72twGhT2r77TZA_XfBa_tUVxmKpQyqLn3dA9zPdgKQk_A8YjLfxtad/exec";
 
-        function fetchScores() {
-            fetch(API_URL)
-                .then(response => response.json())
-                .then(data => {
-                    console.log("Raw API Response:", JSON.stringify(data, null, 2));
+      function fetchScores() {
+        fetch(API_URL)
+          .then(response => response.json())
+          .then(data => {
+            console.log("Raw API Response:", JSON.stringify(data, null, 2));
 
-                    if (!data || !data.data || data.data.length < 2) {
-                        showMessage("No valid scores available");
-                        return;
-                    }
-
-                    updateTable(data.data);
-                })
-                .catch(error => {
-                    console.error("Error fetching scores:", error);
-                    showMessage("Error loading scoreboard");
-                });
-        }
-
-        function showMessage(message) {
-            const tbody = document.querySelector("#scoreboard tbody");
-            const header = document.querySelector("#table-header");
-
-            if (tbody) tbody.innerHTML = `<tr><td colspan="7">${message}</td></tr>`;
-            if (header) header.innerHTML = "";
-        }
-
-        function updateTable(data) {
-            if (!Array.isArray(data) || data.length < 2) {
-                showMessage("No scores available");
-                return;
+            if (!data || !data.data || data.data.length < 2) {
+              showMessage("No valid scores available");
+              return;
             }
 
-            const header = data[0];
-            let scores = data.slice(1);
+            updateTable(data.data);
+          })
+          .catch(error => {
+            console.error("Error fetching scores:", error);
+            showMessage("Error loading scoreboard");
+          });
+      }
 
-            scores = scores.filter(row =>
-                row.length === header.length &&
-                !isNaN(parseFloat(row[row.length - 1]))
-            );
+      function showMessage(message) {
+        const tbody = document.querySelector("#scoreboard tbody");
+        const header = document.querySelector("#table-header");
+        if (tbody) tbody.innerHTML = `<tr><td colspan="7">${message}</td></tr>`;
+        if (header) header.innerHTML = "";
+      }
 
-            scores.sort((a, b) => parseFloat(b[b.length - 1]) - parseFloat(a[a.length - 1]));
+      function updateTable(data) {
+        const header = data[0];
+        let scores = data.slice(1);
 
-            const headerRow = document.querySelector("#table-header");
-            if (headerRow) {
-                headerRow.innerHTML = "";
-                header.forEach(title => {
-                    const th = document.createElement("th");
-                    th.textContent = title;
-                    headerRow.appendChild(th);
-                });
-            }
+        scores = scores.filter(row =>
+          row.length === header.length &&
+          !isNaN(parseFloat(row[row.length - 1]))
+        );
 
-            const tbody = document.querySelector("#scoreboard tbody");
-            if (tbody) {
-                tbody.innerHTML = "";
-                scores.forEach(row => {
-                    const tr = document.createElement("tr");
-                    row.forEach(cell => {
-                        const td = document.createElement("td");
-                        td.textContent = cell ?? "-";
-                        tr.appendChild(td);
-                    });
-                    tbody.appendChild(tr);
-                });
-            }
+        scores.sort((a, b) => parseFloat(b[b.length - 1]) - parseFloat(a[a.length - 1]));
+
+        const headerRow = document.querySelector("#table-header");
+        if (headerRow) {
+          headerRow.innerHTML = "";
+          header.forEach(title => {
+            const th = document.createElement("th");
+            th.textContent = title;
+            headerRow.appendChild(th);
+          });
         }
 
-        fetchScores();
-        setInterval(fetchScores, 5000);
+        const tbody = document.querySelector("#scoreboard tbody");
+        if (tbody) {
+          tbody.innerHTML = "";
+          scores.forEach(row => {
+            const tr = document.createElement("tr");
+            row.forEach(cell => {
+              const td = document.createElement("td");
+              td.textContent = cell ?? "-";
+              tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+          });
+        }
+      }
+
+      fetchScores();
+      setInterval(fetchScores, 5000);
     });
-</script>
+  </script>
+</body>
+</html>
