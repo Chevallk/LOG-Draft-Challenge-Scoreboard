@@ -64,10 +64,37 @@
       color: #bba168;
     }
 
-    @media (max-width: 600px) {
+    @media (max-width: 768px) {
+      header h1 {
+        font-size: 1.4em;
+      }
+
+      table {
+        font-size: 0.85em;
+      }
+
       th, td {
-        font-size: 0.8em;
-        padding: 10px;
+        padding: 10px 6px;
+        word-wrap: break-word;
+      }
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 1em;
+      }
+
+      header h1 {
+        font-size: 1.2em;
+      }
+
+      table {
+        font-size: 0.75em;
+        box-shadow: none;
+      }
+
+      th, td {
+        padding: 8px 5px;
       }
     }
   </style>
