@@ -1,38 +1,14 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LOG Draft Challenge Scoreboard</title>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; }
-        table { width: 80%; border-collapse: collapse; margin: auto; }
-        th, td { border: 1px solid black; padding: 12px; text-align: center; }
-        th { background-color: #0073e6; color: white; font-weight: bold; cursor: pointer; }
-        tr:nth-child(even) { background-color: #f2f2f2; }
-    </style>
-</head>
-<body>
-
-<h1>2025 LOG Draft Challenge Scoreboard</h1>
-<table id="scoreboard">
-    <thead>
-        <tr id="table-header"></tr>
-    </thead>
-    <tbody></tbody>
-</table>
-
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbxBvicwEohuNy72twGhT2r77TZA_XfBa_tUVxmKpQyqLn3dA9zPdgKQk_A8YjLfxtad/exec"; // Replace with actual Web App URL
+    const API_URL = "https://script.google.com/macros/s/AKfycbxBvicwEohuNy72twGhT2r77TZA_XfBa_tUVxmKpQyqLn3dA9zPdgKQk_A8YjLfxtad/exec"; // Replace with your actual Web App URL
 
     function fetchScores() {
         fetch(API_URL)
             .then(response => response.json())
             .then(data => {
-                console.log("Raw API Response:", JSON.stringify(data, null, 2)); // Debugging log
+                console.log("Raw API Response:", JSON.stringify(data, null, 2));
 
                 if (!data || !data.data || data.data.length < 2) {
-                    document.querySelector("#scoreboard tbody").innerHTML = `<tr><td colspan="7">No valid scores available</td></tr>`;
+                    showMessage("No valid scores available");
                     return;
                 }
 
@@ -40,51 +16,59 @@
             })
             .catch(error => {
                 console.error("Error fetching scores:", error);
-                document.querySelector("#scoreboard tbody").innerHTML = `<tr><td colspan="7">Error loading scoreboard</td></tr>`;
+                showMessage("Error loading scoreboard");
             });
     }
 
-    function updateTable(data) {
-        console.log("Formatted data for table:", JSON.stringify(data, null, 2)); // Debugging
+    function showMessage(message) {
+        const tbody = document.querySelector("#scoreboard tbody");
+        const header = document.querySelector("#table-header");
+        tbody.innerHTML = `<tr><td colspan="7">${message}</td></tr>`;
+        header.innerHTML = "";
+    }
 
+    function updateTable(data) {
         if (!Array.isArray(data) || data.length < 2) {
-            document.querySelector("#scoreboard tbody").innerHTML = `<tr><td colspan="7">No scores available</td></tr>`;
+            showMessage("No scores available");
             return;
         }
 
-        const tbody = document.querySelector("#scoreboard tbody");
-        tbody.innerHTML = ""; // Clear existing table rows
+        const header = data[0];
+        let scores = data.slice(1);
 
-        let header = data[0]; // Extract header row
-        let scores = data.slice(1); // Get player data rows
+        // Filter rows that match header length and have valid Total (last column)
+        scores = scores.filter(row =>
+            row.length === header.length &&
+            !isNaN(parseFloat(row[row.length - 1]))
+        );
 
-        scores = scores.filter(row => row.length === header.length); // Ensure row structure matches header
-        scores.sort((a, b) => parseFloat(b[b.length - 1]) - parseFloat(a[a.length - 1])); // Sort by Total column
+        // Sort by Total column (last column)
+        scores.sort((a, b) => parseFloat(b[b.length - 1]) - parseFloat(a[a.length - 1]));
 
-        // Display table header dynamically
-        let headerRow = document.querySelector("#table-header");
-        headerRow.innerHTML = ""; 
-        header.forEach(cell => {
-            let th = document.createElement("th");
-            th.textContent = cell;
+        // Build table header
+        const headerRow = document.querySelector("#table-header");
+        headerRow.innerHTML = "";
+        header.forEach(title => {
+            const th = document.createElement("th");
+            th.textContent = title;
             headerRow.appendChild(th);
         });
 
-        // Process player scores
+        // Build table body
+        const tbody = document.querySelector("#scoreboard tbody");
+        tbody.innerHTML = "";
         scores.forEach(row => {
-            let tr = document.createElement("tr");
+            const tr = document.createElement("tr");
             row.forEach(cell => {
-                let td = document.createElement("td");
-                td.textContent = cell || '-';
+                const td = document.createElement("td");
+                td.textContent = cell ?? "-";
                 tr.appendChild(td);
             });
             tbody.appendChild(tr);
         });
     }
 
-    setInterval(fetchScores, 5000);
+    // Initial and auto refresh every 5 seconds
     fetchScores();
+    setInterval(fetchScores, 5000);
 </script>
-
-</body>
-</html>
