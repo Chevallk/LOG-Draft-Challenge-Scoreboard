@@ -116,10 +116,11 @@
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       const API_URL = "https://script.google.com/macros/s/AKfycbxBvicwEohuNy72twGhT2r77TZA_XfBa_tUVxmKpQyqLn3dA9zPdgKQk_A8YjLfxtad/exec";
+      let previousScores = {};
 
       function fetchScores() {
         fetch(API_URL)
-          .then(response => response.json())
+          .then(res => res.json())
           .then(data => {
             if (!Array.isArray(data) || data.length < 2) {
               showMessage("No scores found.");
@@ -131,10 +132,8 @@
       }
 
       function showMessage(msg) {
-        const header = document.getElementById("table-header");
-        const body = document.querySelector("#scoreboard tbody");
-        header.innerHTML = "";
-        body.innerHTML = `<tr><td colspan="7">${msg}</td></tr>`;
+        document.getElementById("table-header").innerHTML = "";
+        document.querySelector("#scoreboard tbody").innerHTML = `<tr><td colspan="7">${msg}</td></tr>`;
       }
 
       function updateTable(data) {
@@ -142,6 +141,7 @@
         const tableHeader = document.getElementById("table-header");
         const tableBody = document.querySelector("#scoreboard tbody");
 
+        // Create header
         tableHeader.innerHTML = "";
         headers.forEach(title => {
           const th = document.createElement("th");
@@ -149,20 +149,38 @@
           tableHeader.appendChild(th);
         });
 
+        // Sort by last column (total)
         const sorted = rows
           .filter(row => row.length === headers.length && !isNaN(row.at(-1)))
           .sort((a, b) => b.at(-1) - a.at(-1));
 
         tableBody.innerHTML = "";
         sorted.forEach((row, i) => {
+          const playerName = row[0];
+          const currentScore = parseFloat(row.at(-1));
+          const previousScore = previousScores[playerName];
+          const delta = previousScore != null ? currentScore - previousScore : null;
+
+          previousScores[playerName] = currentScore;
+
           const tr = document.createElement("tr");
           row.forEach((cell, j) => {
             const td = document.createElement("td");
+            const isScoreCell = j === row.length - 1;
             td.textContent = cell ?? "-";
+
             if (i === 0 && j === 0) {
-              td.classList.add("crown");
               td.textContent = `👑 ${cell}`;
+              td.classList.add("crown");
             }
+
+            if (isScoreCell && delta !== null && !isNaN(delta)) {
+              const emoji = delta > 0 ? "⬆️" : delta < 0 ? "⬇️" : "➖";
+              const sign = delta > 0 ? "+" : delta < 0 ? "−" : "";
+              td.title = `${sign}${Math.abs(delta)} since last update`;
+              td.textContent += ` ${emoji}`;
+            }
+
             tr.appendChild(td);
           });
           tableBody.appendChild(tr);
