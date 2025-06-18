@@ -78,6 +78,33 @@
       font-size: 1em;
     }
 
+    #chat-container {
+      border-top: 2px solid #bba168;
+      padding: 1em;
+      background: #1a1a1a;
+      margin-top: 2em;
+    }
+
+    #chat-log {
+      max-height: 200px;
+      overflow-y: auto;
+      margin-bottom: 10px;
+      background: #0d0d0d;
+      padding: 1em;
+      border: 1px solid #333;
+    }
+
+    #chat-container input {
+      padding: 6px;
+      margin-right: 6px;
+    }
+
+    #typing-indicator {
+      font-size: 0.85em;
+      color: #aaa;
+      margin-top: 5px;
+    }
+
     @media (max-width: 768px) {
       th, td { font-size: 0.9em; padding: 12px; }
       header h1 { font-size: 1.8em; }
@@ -96,15 +123,22 @@
 
   <main>
     <table id="scoreboard">
-      <thead>
-        <tr id="table-header"></tr>
-      </thead>
+      <thead><tr id="table-header"></tr></thead>
       <tbody></tbody>
     </table>
+
+    <div id="chat-container">
+      <div id="chat-log"></div>
+      <input id="nickname" placeholder="Enter your nickname..." />
+      <input id="message" placeholder="Type a message..." />
+      <button onclick="sendMessage()">Send</button>
+      <div id="typing-indicator"></div>
+    </div>
   </main>
 
   <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbxBvicwEohuNy72twGhT2r77TZA_XfBa_tUVxmKpQyqLn3dA9zPdgKQk_A8YjLfxtad/exec";
+    const CHAT_URL = "https://script.google.com/macros/s/AKfycbzH6HzKSzGu3EmReULQ2Ql3_AfdHTxxqAEmSdupHmLfporcnupiwxk_UqVC_P2RCb0dww/exec"; // Replace this with your Apps Script chat Web App URL
 
     function fetchScores() {
       fetch(API_URL)
@@ -129,7 +163,6 @@
       const tableHeader = document.getElementById("table-header");
       const tableBody = document.querySelector("#scoreboard tbody");
 
-      // Get best score per stat column
       const bestIndex = {};
       for (let i = 1; i < headers.length - 1; i++) {
         let max = -Infinity;
@@ -164,7 +197,6 @@
             td.textContent = cell ?? "-";
           }
 
-          // Category badge logic
           if (j in bestIndex && parseFloat(row[j]) === bestIndex[j]) {
             let badge = "";
             const col = headers[j].toLowerCase();
@@ -172,7 +204,7 @@
             else if (col.includes("punt")) badge = "🏈";
             else if (col.includes("3-point") || col.includes("3 point")) badge = "🏀";
             else if (col.includes("strongest") || col.includes("arm")) badge = "💪";
-            else if (col.includes("beer") || col.includes("pong")) badge = "🏓"; // updated to ping pong
+            else if (col.includes("beer") || col.includes("pong")) badge = "🏓";
             if (badge) td.innerHTML += ` <span class="badge">${badge}</span>`;
           }
 
@@ -182,10 +214,59 @@
       });
     }
 
+    // ————— Live Chat Functions —————
+    let typingTimeout;
+    let lastUser = "";
+
+    function fetchChat() {
+      fetch(CHAT_URL + "?action=read")
+        .then(r => r.json())
+        .then(messages => {
+          const log = document.getElementById("chat-log");
+          log.innerHTML = "";
+          messages.forEach(msg => {
+            const div = document.createElement("div");
+            div.textContent = `${msg.nickname}: ${msg.message}`;
+            log.appendChild(div);
+          });
+          if (!messages.length) {
+            log.innerHTML = "<em>🤖 No one's around, but I’m here if you want to chat!</em>";
+          }
+          log.scrollTop = log.scrollHeight;
+        });
+    }
+
+    function sendMessage() {
+      const name = document.getElementById("nickname").value || "Anonymous";
+      const message = document.getElementById("message").value.trim();
+      if (!message) return;
+
+      fetch(CHAT_URL, {
+        method: "POST",
+        body: JSON.stringify({ nickname: name, message }),
+        headers: { "Content-Type": "application/json" },
+      }).then(() => {
+        document.getElementById("message").value = "";
+        lastUser = name;
+        document.getElementById("typing-indicator").textContent = "";
+        fetchChat();
+      });
+    }
+
+    document.getElementById("message").addEventListener("input", () => {
+      clearTimeout(typingTimeout);
+      document.getElementById("typing-indicator").textContent =
+        `${document.getElementById("nickname").value || "Someone"} is typing...`;
+      typingTimeout = setTimeout(() => {
+        document.getElementById("typing-indicator").textContent = "";
+      }, 1000);
+    });
+
     document.addEventListener("DOMContentLoaded", () => {
       fetchScores();
+      fetchChat();
       setInterval(fetchScores, 5000);
+      setInterval(fetchChat, 3000);
     });
   </script>
-</body>
-</html>
+</
