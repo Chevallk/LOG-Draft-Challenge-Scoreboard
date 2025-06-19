@@ -66,6 +66,30 @@
       margin-left: 6px;
       font-size: 1em;
     }
+
+    /* Tooltip Styling */
+    .tooltip-icon {
+      margin-left: 6px;
+      position: relative;
+      cursor: help;
+      color: #bba168;
+    }
+    .tooltip-icon:hover::after {
+      content: attr(data-tip);
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: -2.4em;
+      background: #222;
+      color: #fff;
+      padding: 8px 10px;
+      border-radius: 6px;
+      white-space: nowrap;
+      font-size: 0.85em;
+      z-index: 10;
+      pointer-events: none;
+      box-shadow: 0 0 6px rgba(187, 161, 104, 0.3);
+    }
   </style>
 </head>
 <body>
@@ -123,6 +147,8 @@
         tableHeader.appendChild(th);
       });
 
+      const bioIndex = headers.findIndex(h => h.toLowerCase().includes("fun"));
+
       const sorted = rows
         .filter(row => row.length === headers.length && !isNaN(row.at(-1)))
         .sort((a, b) => b.at(-1) - a.at(-1));
@@ -132,9 +158,20 @@
         const tr = document.createElement("tr");
         row.forEach((cell, j) => {
           const td = document.createElement("td");
-          if (i === 0 && j === 0) {
-            td.textContent = `👑 ${cell}`;
-            td.classList.add("crown");
+
+          if (j === 0) {
+            const name = i === 0 ? `👑 ${cell}` : cell;
+            const span = document.createElement("span");
+            span.textContent = name;
+
+            const icon = document.createElement("span");
+            icon.textContent = " 🏈";
+            icon.className = "tooltip-icon";
+            icon.setAttribute("data-tip", row[bioIndex] || "");
+
+            td.appendChild(span);
+            td.appendChild(icon);
+            if (i === 0) td.classList.add("crown");
           } else {
             td.textContent = cell ?? "-";
           }
