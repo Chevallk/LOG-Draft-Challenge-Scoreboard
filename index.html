@@ -94,12 +94,12 @@
 
     <section id="polls" style="margin-top: 3em;">
       <h2 style="color:#bba168;">🏆 Fan Polls: Predict the Winners!</h2>
-      <div id="poll-container"></div>
+      <div id="poll-container">Loading polls...</div>
     </section>
   </main>
 
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbxBvicwEohuNy72twGhT2r77TZA_XfBa_tUVxmKpQyqLn3dA9zPdgKQk_A8YjLfxtad/exec"; // Replace with your actual URL
+    const API_URL = "https://script.google.com/macros/s/AKfycbxBvicwEohuNy72twGhT2r77TZA_XfBa_tUVxmKpQyqLn3dA9zPdgKQk_A8YjLfxtad/exec"; // Replace with your actual Script URL ending in /exec
 
     function fetchScores() {
       fetch(API_URL)
@@ -127,6 +127,7 @@
       const funFactIndex = headers.findIndex(h => h.toLowerCase().includes("fun"));
       const leagueIndex = headers.findIndex(h => h.toLowerCase().includes("league"));
       const totalIndex = headers.findIndex(h => h.toLowerCase().includes("total"));
+
       const displayHeaders = headers.filter((_, i) => i !== funFactIndex);
 
       const bestIndex = {};
@@ -206,7 +207,7 @@
           }
         })
         .catch(() => {
-          document.getElementById("poll-container").innerHTML = "<p style='color:#aaa;'>Unable to load polls.</p>";
+          document.getElementById("poll-container").innerHTML = "<p style='color:#aaa;'>Unable to load polls</p>";
         });
     }
 
