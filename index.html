@@ -124,7 +124,7 @@
 
   <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbxBvicwEohuNy72twGhT2r77TZA_XfBa_tUVxmKpQyqLn3dA9zPdgKQk_A8YjLfxtad/exec";
-    const POLL_URL = "https://script.google.com/macros/s/AKfycbxBvicwEohuNy72twGhT2r77TZA_XfBa_tUVxmKpQyqLn3dA9zPdgKQk_A8YjLfxtad/exec";
+    const POLL_URL = API_URL;
 
     function fetchScores() {
       fetch(API_URL)
@@ -152,7 +152,6 @@
       const funFactIndex = headers.findIndex(h => h.toLowerCase().includes("fun"));
       const leagueIndex = headers.findIndex(h => h.toLowerCase().includes("league"));
       const totalIndex = headers.findIndex(h => h.toLowerCase().includes("total"));
-
       const displayHeaders = headers.filter((_, i) => i !== funFactIndex);
 
       const bestIndex = {};
@@ -238,3 +237,11 @@
 
           for (const category in data) {
             const div = document.createElement("div");
+            div.style.marginBottom = "1.5em";
+            div.innerHTML = `<h3 style="color:#fff;">${category}</h3>`;
+
+            data[category].forEach(entry => {
+              const btn = document.createElement("button");
+              btn.textContent = `${entry.name} (${entry.votes} votes)`;
+              btn.onclick = () => vote(category, entry.name);
+              div.append
