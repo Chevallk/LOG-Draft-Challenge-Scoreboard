@@ -66,29 +66,6 @@
       margin-left: 6px;
       font-size: 1em;
     }
-    #chat-container {
-      border-top: 2px solid #bba168;
-      padding: 1em;
-      background: #1a1a1a;
-      margin-top: 2em;
-    }
-    #chat-log {
-      max-height: 200px;
-      overflow-y: auto;
-      margin-bottom: 10px;
-      background: #0d0d0d;
-      padding: 1em;
-      border: 1px solid #333;
-    }
-    #chat-container input {
-      padding: 6px;
-      margin-right: 6px;
-    }
-    #typing-indicator {
-      font-size: 0.85em;
-      color: #aaa;
-      margin-top: 5px;
-    }
   </style>
 </head>
 <body>
@@ -101,19 +78,10 @@
       <thead><tr id="table-header"></tr></thead>
       <tbody></tbody>
     </table>
-
-    <div id="chat-container">
-      <div id="chat-log"></div>
-      <input id="nickname" placeholder="Enter your nickname..." />
-      <input id="message" placeholder="Type a message..." />
-      <button onclick="sendMessage()">Send</button>
-      <div id="typing-indicator"></div>
-    </div>
   </main>
 
   <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbxBvicwEohuNy72twGhT2r77TZA_XfBa_tUVxmKpQyqLn3dA9zPdgKQk_A8YjLfxtad/exec";
-    const CHAT_URL = "https://script.google.com/macros/s/AKfycbzH6HzKSzGu3EmReULQ2Ql3_AfdHTxxqAEmSdupHmLfporcnupiwxk_UqVC_P2RCb0dww/exec"; // Replace this
 
     function fetchScores() {
       fetch(API_URL)
@@ -188,71 +156,10 @@
       });
     }
 
-    // --- Chat Functions ---
-    let typingTimeout;
-
-    function fetchChat() {
-      fetch(CHAT_URL + "?action=read")
-        .then(r => r.json())
-        .then(messages => {
-          const log = document.getElementById("chat-log");
-          log.innerHTML = "";
-
-          if (!messages.length) {
-            log.innerHTML = "<em>🤖 No one's around, but I’m here if you want to chat!</em>";
-            return;
-          }
-
-          messages.forEach(msg => {
-            if (msg.message) {
-              const name = msg.nickname || "Anonymous";
-              const div = document.createElement("div");
-              div.textContent = `${name}: ${msg.message}`;
-              log.appendChild(div);
-            }
-          });
-
-          log.scrollTop = log.scrollHeight;
-        })
-        .catch(err => {
-          console.error("Failed to fetch chat messages:", err);
-        });
-    }
-
-    function sendMessage() {
-      const name = document.getElementById("nickname").value || "Anonymous";
-      const message = document.getElementById("message").value.trim();
-      if (!message) return;
-
-      fetch(CHAT_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nickname: name, message })
-      })
-      .then(() => {
-        document.getElementById("message").value = "";
-        document.getElementById("typing-indicator").textContent = "";
-        fetchChat();
-      })
-      .catch(err => console.error("Chat POST failed:", err));
-    }
-
-    document.getElementById("message").addEventListener("input", () => {
-      clearTimeout(typingTimeout);
-      document.getElementById("typing-indicator").textContent =
-        `${document.getElementById("nickname").value || "Someone"} is typing...`;
-      typingTimeout = setTimeout(() => {
-        document.getElementById("typing-indicator").textContent = "";
-      }, 1000);
-    });
-
     document.addEventListener("DOMContentLoaded", () => {
       fetchScores();
-      fetchChat();
       setInterval(fetchScores, 5000);
-      setInterval(fetchChat, 3000);
     });
   </script>
 </body>
 </html>
-``
