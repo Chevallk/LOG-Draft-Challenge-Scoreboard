@@ -66,8 +66,6 @@
       margin-left: 6px;
       font-size: 1em;
     }
-
-    /* Tooltip Styling */
     .tooltip-icon {
       margin-left: 6px;
       position: relative;
@@ -131,13 +129,15 @@
       const tableBody = document.querySelector("#scoreboard tbody");
 
       const bestIndex = {};
-      for (let i = 1; i < headers.length - 1; i++) {
-        let max = -Infinity;
-        rows.forEach(row => {
-          const val = parseFloat(row[i]);
-          if (!isNaN(val) && val > max) max = val;
-        });
-        bestIndex[i] = max;
+      for (let i = 1; i < headers.length; i++) {
+        if (typeof rows[0][i] === "number" || !isNaN(parseFloat(rows[0][i]))) {
+          let max = -Infinity;
+          rows.forEach(row => {
+            const val = parseFloat(row[i]);
+            if (!isNaN(val) && val > max) max = val;
+          });
+          bestIndex[i] = max;
+        }
       }
 
       tableHeader.innerHTML = "";
@@ -147,11 +147,13 @@
         tableHeader.appendChild(th);
       });
 
-      const bioIndex = headers.findIndex(h => h.toLowerCase().includes("fun"));
+      const nameIndex = headers.findIndex(h => h.toLowerCase().includes("name"));
+      const factIndex = headers.findIndex(h => h.toLowerCase().includes("fun"));
+      const totalIndex = headers.findIndex(h => h.toLowerCase().includes("total"));
 
       const sorted = rows
-        .filter(row => row.length === headers.length && !isNaN(row.at(-1)))
-        .sort((a, b) => b.at(-1) - a.at(-1));
+        .filter(row => row.length === headers.length && !isNaN(parseFloat(row[totalIndex])))
+        .sort((a, b) => b[totalIndex] - a[totalIndex]);
 
       tableBody.innerHTML = "";
       sorted.forEach((row, i) => {
@@ -159,17 +161,17 @@
         row.forEach((cell, j) => {
           const td = document.createElement("td");
 
-          if (j === 0) {
+          if (j === nameIndex) {
             const name = i === 0 ? `👑 ${cell}` : cell;
-            const span = document.createElement("span");
-            span.textContent = name;
+            const nameSpan = document.createElement("span");
+            nameSpan.textContent = name;
 
             const icon = document.createElement("span");
             icon.textContent = " 🏈";
             icon.className = "tooltip-icon";
-            icon.setAttribute("data-tip", row[bioIndex] || "");
+            icon.setAttribute("data-tip", row[factIndex] || "");
 
-            td.appendChild(span);
+            td.appendChild(nameSpan);
             td.appendChild(icon);
             if (i === 0) td.classList.add("crown");
           } else {
