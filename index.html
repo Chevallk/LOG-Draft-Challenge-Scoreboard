@@ -51,6 +51,7 @@
       background-color: #0d0d0d;
       border-bottom: 1px solid #333;
       color: #fff;
+      position: relative;
     }
     tr:first-child td {
       font-weight: bold;
@@ -68,25 +69,27 @@
     }
     .tooltip-icon {
       margin-left: 6px;
-      position: relative;
-      cursor: help;
       color: #bba168;
+      cursor: pointer;
+      position: relative;
     }
-    .tooltip-icon:hover::after {
-      content: attr(data-tip);
+    .mobile-tooltip {
       position: absolute;
+      top: 120%;
       left: 50%;
       transform: translateX(-50%);
-      bottom: -2.4em;
-      background: #222;
+      background-color: #222;
       color: #fff;
       padding: 8px 10px;
       border-radius: 6px;
-      white-space: nowrap;
       font-size: 0.85em;
-      z-index: 10;
-      pointer-events: none;
+      white-space: nowrap;
       box-shadow: 0 0 6px rgba(187, 161, 104, 0.3);
+      z-index: 100;
+      display: none;
+    }
+    .tooltip-icon:hover .mobile-tooltip {
+      display: block;
     }
   </style>
 </head>
@@ -128,28 +131,31 @@
       const tableHeader = document.getElementById("table-header");
       const tableBody = document.querySelector("#scoreboard tbody");
 
-      const bestIndex = {};
-      headers.forEach((h, i) => {
-        if (!isNaN(parseFloat(rows[0][i]))) {
-          let max = -Infinity;
-          rows.forEach(row => {
-            const val = parseFloat(row[i]);
-            if (!isNaN(val) && val > max) max = val;
-          });
-          bestIndex[i] = max;
-        }
-      });
+      // Assume "Fun Fact" is the last column; we'll hide it but use it for tooltips
+      const funFactIndex = headers.findIndex(h => h.toLowerCase().includes("fun"));
+      const leagueIndex = headers.findIndex(h => h.toLowerCase().includes("league"));
+      const totalIndex = headers.findIndex(h => h.toLowerCase().includes("total"));
+
+      // Remove fun fact column from headers for display
+      const displayHeaders = headers.filter((_, i) => i !== funFactIndex);
 
       tableHeader.innerHTML = "";
-      headers.forEach(title => {
+      displayHeaders.forEach(title => {
         const th = document.createElement("th");
         th.textContent = title;
         tableHeader.appendChild(th);
       });
 
-      const nameColIndex = headers.findIndex(h => h.toLowerCase().includes("league"));
-      const funFactIndex = headers.findIndex(h => h.toLowerCase().includes("fun"));
-      const totalIndex = headers.findIndex(h => h.toLowerCase().includes("total"));
+      const bestIndex = {};
+      displayHeaders.forEach((_, j) => {
+        const originalIndex = headers.findIndex(h => h === displayHeaders[j]);
+        let max = -Infinity;
+        rows.forEach(row => {
+          const val = parseFloat(row[originalIndex]);
+          if (!isNaN(val) && val > max) max = val;
+        });
+        bestIndex[originalIndex] = max;
+      });
 
       const sorted = rows
         .filter(row => row.length === headers.length && !isNaN(parseFloat(row[totalIndex])))
@@ -158,17 +164,30 @@
       tableBody.innerHTML = "";
       sorted.forEach((row, i) => {
         const tr = document.createElement("tr");
-        row.forEach((cell, j) => {
+        displayHeaders.forEach((_, j) => {
+          const originalIndex = headers.findIndex(h => h === displayHeaders[j]);
           const td = document.createElement("td");
+          const cell = row[originalIndex];
 
-          if (j === nameColIndex) {
+          if (originalIndex === leagueIndex) {
             const nameSpan = document.createElement("span");
             nameSpan.textContent = i === 0 ? `👑 ${cell}` : cell;
 
             const icon = document.createElement("span");
             icon.textContent = " 🏈";
             icon.className = "tooltip-icon";
-            icon.setAttribute("data-tip", row[funFactIndex] || "");
+
+            const tooltip = document.createElement("div");
+            tooltip.className = "mobile-tooltip";
+            tooltip.textContent = row[funFactIndex] || "";
+            icon.appendChild(tooltip);
+
+            icon.addEventListener("click", (e) => {
+              e.stopPropagation();
+              document.querySelectorAll(".mobile-tooltip").forEach(tip => tip.style.display = "none");
+              tooltip.style.display = "block";
+              document.body.addEventListener("click", () => tooltip.style.display = "none", { once: true });
+            });
 
             td.appendChild(nameSpan);
             td.appendChild(icon);
@@ -177,9 +196,9 @@
             td.textContent = cell ?? "-";
           }
 
-          if (j in bestIndex && parseFloat(row[j]) === bestIndex[j]) {
+          if (originalIndex in bestIndex && parseFloat(cell) === bestIndex[originalIndex]) {
             let badge = "";
-            const col = headers[j].toLowerCase();
+            const col = headers[originalIndex].toLowerCase();
             if (col.includes("dash")) badge = "🏃";
             else if (col.includes("punt")) badge = "🏈";
             else if (col.includes("3-point") || col.includes("3 point")) badge = "🏀";
