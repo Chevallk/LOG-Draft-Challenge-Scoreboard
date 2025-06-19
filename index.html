@@ -129,8 +129,8 @@
       const tableBody = document.querySelector("#scoreboard tbody");
 
       const bestIndex = {};
-      for (let i = 1; i < headers.length; i++) {
-        if (typeof rows[0][i] === "number" || !isNaN(parseFloat(rows[0][i]))) {
+      headers.forEach((h, i) => {
+        if (!isNaN(parseFloat(rows[0][i]))) {
           let max = -Infinity;
           rows.forEach(row => {
             const val = parseFloat(row[i]);
@@ -138,7 +138,7 @@
           });
           bestIndex[i] = max;
         }
-      }
+      });
 
       tableHeader.innerHTML = "";
       headers.forEach(title => {
@@ -147,8 +147,8 @@
         tableHeader.appendChild(th);
       });
 
-      const nameIndex = headers.findIndex(h => h.toLowerCase().includes("name"));
-      const factIndex = headers.findIndex(h => h.toLowerCase().includes("fun"));
+      const nameColIndex = headers.findIndex(h => h.toLowerCase().includes("league"));
+      const funFactIndex = headers.findIndex(h => h.toLowerCase().includes("fun"));
       const totalIndex = headers.findIndex(h => h.toLowerCase().includes("total"));
 
       const sorted = rows
@@ -161,15 +161,14 @@
         row.forEach((cell, j) => {
           const td = document.createElement("td");
 
-          if (j === nameIndex) {
-            const name = i === 0 ? `👑 ${cell}` : cell;
+          if (j === nameColIndex) {
             const nameSpan = document.createElement("span");
-            nameSpan.textContent = name;
+            nameSpan.textContent = i === 0 ? `👑 ${cell}` : cell;
 
             const icon = document.createElement("span");
             icon.textContent = " 🏈";
             icon.className = "tooltip-icon";
-            icon.setAttribute("data-tip", row[factIndex] || "");
+            icon.setAttribute("data-tip", row[funFactIndex] || "");
 
             td.appendChild(nameSpan);
             td.appendChild(icon);
