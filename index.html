@@ -32,6 +32,21 @@
       max-width: 1000px;
       margin: 0 auto;
     }
+    #auth-panel input {
+      padding: 10px;
+      margin-right: 6px;
+      border-radius: 4px;
+      border: none;
+    }
+    #auth-panel button {
+      background-color: #1a1a1a;
+      color: #bba168;
+      border: 1px solid #bba168;
+      padding: 10px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 6px;
+    }
     #chat-box {
       height: 300px;
       overflow-y: auto;
@@ -46,6 +61,7 @@
       padding: 0.5em 1em;
       margin: 6px 0;
       max-width: 80%;
+      word-wrap: break-word;
     }
     #typing-status {
       font-style: italic;
@@ -95,12 +111,21 @@
   </header>
 
   <main>
-    <!-- Chat Section -->
-    <section id="chat-room">
+    <!-- Auth Panel -->
+    <div id="auth-panel" style="margin-bottom: 2em;">
+      <input type="email" id="auth-email" placeholder="Email" />
+      <input type="password" id="auth-password" placeholder="Password" />
+      <button id="register-btn">Register</button>
+      <button id="login-btn">Login</button>
+      <button id="logout-btn" style="display: none;">Logout</button>
+    </div>
+
+    <!-- Chat Section (only shown after login) -->
+    <section id="chat-room" style="display: none;">
       <div id="chat-box"></div>
       <div id="typing-status"></div>
-      <form id="chat-form">
-        <input id="chat-name" placeholder="Your name" required />
+      <form id="chat-form" style="display: none;">
+        <input id="chat-name" placeholder="Your name" required readonly />
         <input id="chat-message" placeholder="Message..." required style="width: 50%;" />
         <button type="submit">Send</button>
       </form>
@@ -119,28 +144,69 @@
     onChildAdded, query, limitToLast, remove
   } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
+  import {
+    getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+    onAuthStateChanged, signOut
+  } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+
   const firebaseConfig = {
     apiKey: "AIzaSyDxWpRXF8aMg31r-t27-pONNOB2iUJXYpg",
     authDomain: "log-live-chat.firebaseapp.com",
     projectId: "log-live-chat",
-    storageBucket: "log-live-chat.firebasestorage.app",
+    storageBucket: "log-live-chat.appspot.com",
     messagingSenderId: "557426074509",
-    appId: "1:557426074509:web:520a626d100bcd6db253c4",
-    measurementId: "G-BGNGWCFSH8"
+    appId: "1:557426074509:web:520a626d100bcd6db253c4"
   };
 
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
+  const auth = getAuth();
 
   const chatBox = document.getElementById("chat-box");
   const chatForm = document.getElementById("chat-form");
   const chatName = document.getElementById("chat-name");
   const chatMessage = document.getElementById("chat-message");
   const typingStatus = document.getElementById("typing-status");
+  const chatRoom = document.getElementById("chat-room");
+
+  const emailInput = document.getElementById("auth-email");
+  const passwordInput = document.getElementById("auth-password");
+  const registerBtn = document.getElementById("register-btn");
+  const loginBtn = document.getElementById("login-btn");
+  const logoutBtn = document.getElementById("logout-btn");
 
   const messagesRef = ref(db, "messages");
   const typingRef = ref(db, "typing");
 
+  // Auth handlers
+  registerBtn.onclick = () => {
+    createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value)
+      .catch(err => alert("Registration error: " + err.message));
+  };
+
+  loginBtn.onclick = () => {
+    signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value)
+      .catch(err => alert("Login error: " + err.message));
+  };
+
+  logoutBtn.onclick = () => {
+    signOut(auth);
+  };
+
+  onAuthStateChanged(auth, user => {
+    if (user) {
+      chatRoom.style.display = "block";
+      chatForm.style.display = "block";
+      chatName.value = user.email;
+      chatName.readOnly = true;
+      logoutBtn.style.display = "inline-block";
+    } else {
+      chatRoom.style.display = "none";
+      logoutBtn.style.display = "none";
+    }
+  });
+
+  // Chat and typing logic
   onChildAdded(query(messagesRef, limitToLast(100)), (snap) => {
     const msg = snap.val();
     const p = document.createElement("p");
@@ -270,4 +336,3 @@
     setInterval(fetchScores, 10000);
   });
 </script>
-  
