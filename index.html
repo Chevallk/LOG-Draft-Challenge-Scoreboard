@@ -1,127 +1,8 @@
-<head>
-  <meta charset="UTF-8" />
-  <title>Draft Challenge Leaderboard</title>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@700&display=swap" rel="stylesheet" />
-  <style>
-    body {
-      background-color: #0d0d0d;
-      color: #fff;
-      font-family: 'Roboto Condensed', sans-serif;
-      margin: 0;
-      padding: 0;
-    }
-    header {
-      background-color: #000;
-      padding: 2em 1em 1em;
-      text-align: center;
-      border-bottom: 6px solid #bba168;
-    }
-    header img {
-      max-height: 80px;
-      margin-bottom: 10px;
-    }
-    header h1 {
-      margin: 0;
-      font-size: 2.4em;
-      color: #bba168;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-    }
-    main {
-      padding: 2em 1em;
-      max-width: 1000px;
-      margin: 0 auto;
-    }
-    table {
-      width: 100%;
-      margin-bottom: 3em;
-      border: 1px solid #333;
-      border-collapse: collapse;
-    }
-    th, td {
-      padding: 10px;
-      border: 1px solid #333;
-    }
-    th {
-      background-color: #1a1a1a;
-      color: #bba168;
-    }
-    .crown {
-      color: #bba168;
-      font-weight: bold;
-    }
-    .badge {
-      margin-left: 6px;
-      font-size: 1em;
-    }
-    #chat-room {
-      margin-top: 2em;
-    }
-    #chat-box {
-      height: 300px;
-      overflow-y: auto;
-      border: 1px solid #555;
-      padding: 1em;
-      background: #111;
-      margin-bottom: 1em;
-    }
-    #chat-box p {
-      background: #1a1a1a;
-      border-radius: 12px;
-      padding: 0.5em 1em;
-      margin: 6px 0;
-      max-width: 80%;
-      word-wrap: break-word;
-    }
-    #typing-status {
-      font-style: italic;
-      color: #bba168;
-      height: 1.5em;
-    }
-    #chat-form input,
-    #chat-form button {
-      padding: 10px;
-      border: none;
-      border-radius: 4px;
-    }
-    #chat-form button {
-      background-color: #1a1a1a;
-      color: #bba168;
-      border: 1px solid #bba168;
-      cursor: pointer;
-    }
-  </style>
-</head>
-<body>
-  <header>
-    <img src="https://i.postimg.cc/RZcQfc7N/LOG-Transparent-Logo.png" alt="Challenge Logo" />
-    <h1>Draft Challenge Leaderboard</h1>
-  </header>
-
-  <main>
-    <!-- Leaderboard Table -->
-    <table id="scoreboard">
-      <thead><tr id="table-header"></tr></thead>
-      <tbody></tbody>
-    </table>
-
-    <!-- Chat Section (now below the table) -->
-    <section id="chat-room">
-      <h3 style="color:#bba168;">💬 Live Chat</h3>
-      <div id="chat-box"></div>
-      <div id="typing-status"></div>
-      <form id="chat-form">
-        <input id="chat-name" placeholder="Your name" required />
-        <input id="chat-message" placeholder="Message..." required style="width: 50%;" />
-        <button type="submit">Send</button>
-      </form>
-    </section>
-  </main>
-  <script type="module">
+<script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
   import {
-    getDatabase, ref, set, push, onValue,
-    onChildAdded, query, limitToLast, remove
+    getDatabase, ref as dbRef, set, push, onValue,
+    onChildAdded, query, limitToLast, remove, update
   } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
   const firebaseConfig = {
@@ -136,16 +17,16 @@
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
 
+  // CHAT: Name input, typing status, message submission
   const chatBox = document.getElementById("chat-box");
   const chatForm = document.getElementById("chat-form");
   const chatName = document.getElementById("chat-name");
   const chatMessage = document.getElementById("chat-message");
   const typingStatus = document.getElementById("typing-status");
 
-  const messagesRef = ref(db, "messages");
-  const typingRef = ref(db, "typing");
+  const messagesRef = dbRef(db, "messages");
+  const typingRef = dbRef(db, "typing");
 
-  // Real-time chat messages
   onChildAdded(query(messagesRef, limitToLast(100)), (snap) => {
     const msg = snap.val();
     const p = document.createElement("p");
@@ -154,11 +35,10 @@
     chatBox.scrollTop = chatBox.scrollHeight;
   });
 
-  // Typing indicator
   chatMessage.addEventListener("input", () => {
     const name = chatName.value.trim();
     if (!name) return;
-    const myRef = ref(db, `typing/${name}`);
+    const myRef = dbRef(db, `typing/${name}`);
     if (chatMessage.value.trim()) {
       set(myRef, name);
     } else {
@@ -182,10 +62,86 @@
     if (!name || !text) return;
     push(messagesRef, { name, text });
     chatMessage.value = "";
-    remove(ref(db, `typing/${name}`));
+    remove(dbRef(db, `typing/${name}`));
+  });
+    // Media Upload
+  const uploaderName = document.getElementById("uploader-name");
+  const mediaFile = document.getElementById("media-file");
+  const uploadBtn = document.getElementById("upload-btn");
+  const uploadStatus = document.getElementById("upload-status");
+  const gallery = document.getElementById("media-gallery");
+  const galleryRef = dbRef(db, "gallery");
+
+  import {
+    getStorage, ref as storageRef, uploadBytes, getDownloadURL
+  } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-storage.js";
+
+  const storage = getStorage(app);
+
+  uploadBtn.addEventListener("click", async () => {
+    const name = uploaderName.value.trim();
+    const file = mediaFile.files[0];
+    if (!name || !file) {
+      alert("Please enter your name and select a file.");
+      return;
+    }
+
+    const filePath = `media/${Date.now()}_${file.name}`;
+    const fileRef = storageRef(storage, filePath);
+    uploadStatus.textContent = "Uploading...";
+
+    try {
+      await uploadBytes(fileRef, file);
+      const url = await getDownloadURL(fileRef);
+      const entry = {
+        name,
+        url,
+        type: file.type.startsWith("video") ? "video" : "image",
+        time: Date.now(),
+        likes: 0
+      };
+      await push(galleryRef, entry);
+      uploadStatus.textContent = "Uploaded successfully!";
+      mediaFile.value = "";
+    } catch (err) {
+      console.error(err);
+      uploadStatus.textContent = "Upload failed. Try again.";
+    }
   });
 
-  // Leaderboard fetch from Google Sheets
+  // Live Gallery
+  onChildAdded(galleryRef, (snap) => {
+    const key = snap.key;
+    const { name, url, type, likes = 0 } = snap.val();
+
+    const card = document.createElement("div");
+    card.className = "media-card";
+
+    const media = document.createElement(type === "video" ? "video" : "img");
+    media.src = url;
+    if (type === "video") media.controls = true;
+    if (type === "image" && url.endsWith(".gif")) media.loading = "lazy";
+
+    const caption = document.createElement("div");
+    caption.textContent = `🧑 ${name}`;
+
+    const reactions = document.createElement("div");
+    reactions.className = "reaction-bar";
+
+    const likeBtn = document.createElement("button");
+    likeBtn.innerHTML = `❤️ ${likes}`;
+    likeBtn.onclick = () => {
+      update(dbRef(db, `gallery/${key}`), { likes: likes + 1 });
+      likeBtn.disabled = true;
+    };
+
+    reactions.appendChild(likeBtn);
+    card.appendChild(media);
+    card.appendChild(caption);
+    card.appendChild(reactions);
+    gallery.prepend(card);
+  });
+    // Leaderboard
   const API_URL = "https://script.google.com/macros/s/AKfycbz5nn5KBCDW-MOOjwbZEmJi4VG4fehEDdnFi1S9ZRWS_SHhpRpFMg0FFCRPYKWgKxiBzg/exec";
 
   function fetchScores() {
@@ -270,7 +226,7 @@
       tableBody.appendChild(tr);
     });
   }
-
+    // Initialize fetch when page loads and refresh every 10 seconds
   document.addEventListener("DOMContentLoaded", () => {
     fetchScores();
     setInterval(fetchScores, 10000);
