@@ -183,33 +183,33 @@
       });
     }
 
-    function loadPolls() {
-      fetch(API_URL + "?polls=true")
-        .then(res => res.json())
-        .then(data => {
-          const container = document.getElementById("poll-container");
-          container.innerHTML = "";
+   function loadPolls() {
+  fetch(API_URL + "?polls=true")
+    .then(res => res.json())
+    .then(data => {
+      const container = document.getElementById("poll-container");
+      container.innerHTML = "";
 
-          for (const category in data) {
-            const section = document.createElement("div");
-            section.style.marginBottom = "1.5em";
-            section.innerHTML = `<h3 style="color:#fff;">${category}</h3>`;
+      for (const category in data) {
+        const div = document.createElement("div");
+        div.style.marginBottom = "1.5em";
+        div.innerHTML = `<h3 style="color:#fff;">${category}</h3>`;
 
-            data[category].forEach(entry => {
-              const btn = document.createElement("button");
-              btn.textContent = `${entry.name} (${entry.votes} votes)`;
-              btn.onclick = () => vote(category, entry.name);
-              section.appendChild(btn);
-            });
-
-            container.appendChild(section);
-          }
-        })
-        .catch(err => {
-          console.error("Poll fetch error:", err);
-          document.getElementById("poll-container").innerHTML = "<p style='color:#aaa;'>Unable to load polls</p>";
+        data[category].forEach(entry => {
+          const btn = document.createElement("button");
+          btn.textContent = `${entry.name} (${entry.votes} votes)`;
+          btn.onclick = () => vote(category, entry.name);
+          div.appendChild(btn);
         });
-    }
+
+        container.appendChild(div);
+      }
+    })
+    .catch(() => {
+      document.getElementById("poll-container").innerHTML =
+        "<p style='color:#aaa;'>Unable to load polls</p>";
+    });
+}
 
     function vote(category, name) {
       fetch(API_URL, {
