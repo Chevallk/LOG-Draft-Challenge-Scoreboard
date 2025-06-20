@@ -51,6 +51,7 @@
       background-color: #0d0d0d;
       border-bottom: 1px solid #333;
       color: #fff;
+      position: relative;
     }
     tr:first-child td {
       font-weight: bold;
@@ -98,7 +99,7 @@
   </main>
 
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbxBvicwEohuNy72twGhT2r77TZA_XfBa_tUVxmKpQyqLn3dA9zPdgKQk_A8YjLfxtad/exec"; // ← Replace this with your actual URL
+    const API_URL = "https://script.google.com/macros/s/AKfycbxBvicwEohuNy72twGhT2r77TZA_XfBa_tUVxmKpQyqLn3dA9zPdgKQk_A8YjLfxtad/exec";
 
     function fetchScores() {
       fetch(API_URL)
@@ -126,11 +127,10 @@
       const funFactIndex = headers.findIndex(h => h.toLowerCase().includes("fun"));
       const leagueIndex = headers.findIndex(h => h.toLowerCase().includes("league"));
       const totalIndex = headers.findIndex(h => h.toLowerCase().includes("total"));
-
       const displayHeaders = headers.filter((_, i) => i !== funFactIndex);
 
       const bestIndex = {};
-      displayHeaders.forEach((title, j) => {
+      displayHeaders.forEach(title => {
         const colIndex = headers.findIndex(h => h === title);
         let max = -Infinity;
         rows.forEach(row => {
@@ -154,20 +154,20 @@
       tableBody.innerHTML = "";
       sorted.forEach((row, i) => {
         const tr = document.createElement("tr");
-
         displayHeaders.forEach(title => {
           const idx = headers.findIndex(h => h === title);
-          const cell = row[idx];
           const td = document.createElement("td");
+          const val = row[idx];
 
-          td.textContent = cell ?? "-";
           if (idx === leagueIndex && funFactIndex >= 0) {
-            td.innerHTML = `${i === 0 ? "👑 " : ""}${cell} 🏈`;
+            td.innerHTML = `${i === 0 ? "👑 " : ""}${val} 🏈`;
             td.title = row[funFactIndex] || "";
             if (i === 0) td.classList.add("crown");
+          } else {
+            td.textContent = val ?? "-";
           }
 
-          if (idx in bestIndex && parseFloat(cell) === bestIndex[idx]) {
+          if (idx in bestIndex && parseFloat(val) === bestIndex[idx]) {
             let badge = "";
             const col = headers[idx].toLowerCase();
             if (col.includes("dash")) badge = "🏃";
@@ -180,7 +180,6 @@
 
           tr.appendChild(td);
         });
-
         tableBody.appendChild(tr);
       });
     }
@@ -208,7 +207,8 @@
           }
         })
         .catch(() => {
-          document.getElementById("poll-container").innerHTML = "<p style='color:#aaa;'>Unable to load polls</p>";
+          document.getElementById("poll-container").innerHTML =
+            "<p style='color:#aaa;'>Unable to load polls</p>";
         });
     }
 
@@ -218,8 +218,8 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ category, name })
       })
-      .then(() => loadPolls())
-      .catch(err => console.error("Vote error:", err));
+        .then(() => loadPolls())
+        .catch(err => console.error("Vote error:", err));
     }
 
     document.addEventListener("DOMContentLoaded", () => {
