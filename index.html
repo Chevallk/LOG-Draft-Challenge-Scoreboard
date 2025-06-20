@@ -123,7 +123,6 @@
     </section>
   </main>
 
-  <!-- Firebase SDK v9+ with modules -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
     import { getDatabase, ref, push, onChildAdded, query, limitToLast } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
@@ -162,7 +161,6 @@
       const name = chatName.value.trim();
       const text = chatMessage.value.trim();
       if (!name || !text) return;
-
       push(messagesRef, { name, text });
       chatMessage.value = "";
     });
@@ -237,6 +235,4 @@
             td.textContent = val ?? "-";
           }
 
-          if (idx in bestIndex && parseFloat(val) === bestIndex[idx]) {
-            let badge = "";
-            const col = headers[idx].toLowerCase();
+          if (idx in bestIndex && parseFloat(val)
