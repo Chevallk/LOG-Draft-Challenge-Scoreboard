@@ -1,5 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <title>Draft Challenge Leaderboard</title>
@@ -70,16 +68,41 @@
       margin-left: 6px;
       font-size: 1em;
     }
+
+    /* Chat Enhancements */
     #chat-room {
       margin-top: 3em;
     }
     #chat-box {
       height: 300px;
-      overflow-y: scroll;
+      overflow-y: auto;
       border: 1px solid #555;
       padding: 1em;
       background: #111;
       margin-bottom: 1em;
+    }
+    #chat-box p {
+      background: #1a1a1a;
+      border-radius: 12px;
+      padding: 0.5em 1em;
+      margin: 6px 0;
+      max-width: 80%;
+      word-wrap: break-word;
+    }
+    #typing-status {
+      color: #bba168;
+      font-style: italic;
+      height: 1.5em;
+      margin-bottom: 0.5em;
+    }
+    #chat-alert {
+      background: #bba168;
+      color: #000;
+      padding: 0.5em;
+      text-align: center;
+      font-weight: bold;
+      cursor: pointer;
+      display: none;
     }
     #chat-form input {
       padding: 8px;
@@ -115,6 +138,7 @@
     <section id="chat-room">
       <h2 style="color: #bba168;">💬 Trash Talk Room</h2>
       <div id="chat-box"></div>
+      <div id="typing-status" style="color: #bba168; font-style: italic; height: 1.5em; margin-bottom: 0.5em;"></div>
       <form id="chat-form">
         <input id="chat-name" placeholder="Your name" required />
         <input id="chat-message" placeholder="Message..." required style="width: 50%;" />
@@ -122,141 +146,187 @@
       </form>
     </section>
   </main>
-    <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-    import { getDatabase, ref, push, onChildAdded, query, limitToLast } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+  <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+  import {
+    getDatabase, ref, push, onChildAdded,
+    query, limitToLast, onValue, set, remove
+  } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
-    // Firebase Config
-    const firebaseConfig = {
-      apiKey: "AIzaSyDxWpRXF8aMg31r-t27-pONNOB2iUJXYpg",
-      authDomain: "log-live-chat.firebaseapp.com",
-      projectId: "log-live-chat",
-      storageBucket: "log-live-chat.firebasestorage.app",
-      messagingSenderId: "557426074509",
-      appId: "1:557426074509:web:520a626d100bcd6db253c4",
-      measurementId: "G-BGNGWCFSH8"
-    };
+  const firebaseConfig = {
+    apiKey: "AIzaSyDxWpRXF8aMg31r-t27-pONNOB2iUJXYpg",
+    authDomain: "log-live-chat.firebaseapp.com",
+    projectId: "log-live-chat",
+    storageBucket: "log-live-chat.firebasestorage.app",
+    messagingSenderId: "557426074509",
+    appId: "1:557426074509:web:520a626d100bcd6db253c4",
+    measurementId: "G-BGNGWCFSH8"
+  };
 
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
 
-    // Chat Elements
-    const chatBox = document.getElementById("chat-box");
-    const chatForm = document.getElementById("chat-form");
-    const chatName = document.getElementById("chat-name");
-    const chatMessage = document.getElementById("chat-message");
+  const chatBox = document.getElementById("chat-box");
+  const chatForm = document.getElementById("chat-form");
+  const chatName = document.getElementById("chat-name");
+  const chatMessage = document.getElementById("chat-message");
+  const typingStatus = document.getElementById("typing-status");
 
-    const messagesRef = ref(db, "messages");
-    const recentMessages = query(messagesRef, limitToLast(100));
+  const messagesRef = ref(db, "messages");
+  const typingRef = ref(db, "typing");
 
-    onChildAdded(recentMessages, (snapshot) => {
-      const msg = snapshot.val();
-      const p = document.createElement("p");
-      p.innerHTML = `<strong>${msg.name}</strong>: ${msg.text}`;
-      chatBox.appendChild(p);
+  // Track scroll for new message alerts
+  let isAtBottom = true;
+  let alertBanner = null;
+
+  chatBox.addEventListener("scroll", () => {
+    const buffer = 10;
+    isAtBottom = chatBox.scrollHeight - chatBox.scrollTop - chatBox.clientHeight <= buffer;
+  });
+
+  // Typing indicator
+  onValue(typingRef, (snapshot) => {
+    const val = snapshot.val();
+    const self = chatName.value.trim();
+    const names = val ? Object.values(val).filter(n => n !== self) : [];
+    typingStatus.textContent = names.length
+      ? `${names.join(", ")} ${names.length === 1 ? "is" : "are"} typing...`
+      : "";
+  });
+
+  // Display messages
+  onChildAdded(query(messagesRef, limitToLast(100)), (snapshot) => {
+    const msg = snapshot.val();
+    const p = document.createElement("p");
+    p.innerHTML = `<strong>${msg.name}</strong>: ${msg.text}`;
+    chatBox.appendChild(p);
+
+    if (isAtBottom) {
       chatBox.scrollTop = chatBox.scrollHeight;
+      if (alertBanner) alertBanner.remove();
+    } else if (!alertBanner) {
+      alertBanner = document.createElement("div");
+      alertBanner.textContent = "⬇️ New message";
+      alertBanner.id = "chat-alert";
+      alertBanner.onclick = () => {
+        chatBox.scrollTop = chatBox.scrollHeight;
+        alertBanner.remove();
+        alertBanner = null;
+      };
+      chatBox.parentNode.insertBefore(alertBanner, typingStatus);
+      alertBanner.style.display = "block";
+    }
+  });
+
+  // Handle typing
+  chatMessage.addEventListener("input", () => {
+    const name = chatName.value.trim();
+    const text = chatMessage.value.trim();
+    if (name) {
+      const myTypingRef = ref(db, `typing/${name}`);
+      if (text) set(myTypingRef, name);
+      else remove(myTypingRef);
+    }
+  });
+
+  chatForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const name = chatName.value.trim();
+    const text = chatMessage.value.trim();
+    if (!name || !text) return;
+    push(messagesRef, { name, text });
+    chatMessage.value = "";
+    remove(ref(db, `typing/${name}`));
+  });
+
+  // Leaderboard
+  const API_URL = "https://script.google.com/macros/s/AKfycbz5nn5KBCDW-MOOjwbZEmJi4VG4fehEDdnFi1S9ZRWS_SHhpRpFMg0FFCRPYKWgKxiBzg/exec";
+
+  function fetchScores() {
+    fetch(API_URL + "?scores=true")
+      .then(res => res.json())
+      .then(data => {
+        if (!Array.isArray(data) || data.length < 2) {
+          showMessage("No scores found.");
+          return;
+        }
+        updateTable(data);
+      })
+      .catch(() => showMessage("Error loading scores."));
+  }
+
+  function showMessage(msg) {
+    document.getElementById("table-header").innerHTML = "";
+    document.querySelector("#scoreboard tbody").innerHTML = `<tr><td colspan="7">${msg}</td></tr>`;
+  }
+
+  function updateTable(data) {
+    const [headers, ...rows] = data;
+    const tableHeader = document.getElementById("table-header");
+    const tableBody = document.querySelector("#scoreboard tbody");
+
+    const funFactIndex = headers.findIndex(h => h.toLowerCase().includes("fun"));
+    const leagueIndex = headers.findIndex(h => h.toLowerCase().includes("league"));
+    const totalIndex = headers.findIndex(h => h.toLowerCase().includes("total"));
+    const displayHeaders = headers.filter((_, i) => i !== funFactIndex);
+
+    const bestIndex = {};
+    displayHeaders.forEach(title => {
+      const colIndex = headers.findIndex(h => h === title);
+      let max = -Infinity;
+      rows.forEach(row => {
+        const val = parseFloat(row[colIndex]);
+        if (!isNaN(val) && val > max) max = val;
+      });
+      bestIndex[colIndex] = max;
     });
 
-    chatForm.addEventListener("submit", function (e) {
-      e.preventDefault();
-      const name = chatName.value.trim();
-      const text = chatMessage.value.trim();
-      if (!name || !text) return;
-      push(messagesRef, { name, text });
-      chatMessage.value = "";
+    tableHeader.innerHTML = "";
+    displayHeaders.forEach(title => {
+      const th = document.createElement("th");
+      th.textContent = title;
+      tableHeader.appendChild(th);
     });
 
-    // Leaderboard Logic
-    const API_URL = "https://script.google.com/macros/s/AKfycbz5nn5KBCDW-MOOjwbZEmJi4VG4fehEDdnFi1S9ZRWS_SHhpRpFMg0FFCRPYKWgKxiBzg/exec";
+    const sorted = rows
+      .filter(row => !isNaN(parseFloat(row[totalIndex])))
+      .sort((a, b) => b[totalIndex] - a[totalIndex]);
 
-    function fetchScores() {
-      fetch(API_URL + "?scores=true")
-        .then(res => res.json())
-        .then(data => {
-          if (!Array.isArray(data) || data.length < 2) {
-            showMessage("No scores found.");
-            return;
-          }
-          updateTable(data);
-        })
-        .catch(() => showMessage("Error loading scores."));
-    }
-
-    function showMessage(msg) {
-      document.getElementById("table-header").innerHTML = "";
-      document.querySelector("#scoreboard tbody").innerHTML = `<tr><td colspan="7">${msg}</td></tr>`;
-    }
-
-    function updateTable(data) {
-      const [headers, ...rows] = data;
-      const tableHeader = document.getElementById("table-header");
-      const tableBody = document.querySelector("#scoreboard tbody");
-
-      const funFactIndex = headers.findIndex(h => h.toLowerCase().includes("fun"));
-      const leagueIndex = headers.findIndex(h => h.toLowerCase().includes("league"));
-      const totalIndex = headers.findIndex(h => h.toLowerCase().includes("total"));
-      const displayHeaders = headers.filter((_, i) => i !== funFactIndex);
-
-      const bestIndex = {};
+    tableBody.innerHTML = "";
+    sorted.forEach((row, i) => {
+      const tr = document.createElement("tr");
       displayHeaders.forEach(title => {
-        const colIndex = headers.findIndex(h => h === title);
-        let max = -Infinity;
-        rows.forEach(row => {
-          const val = parseFloat(row[colIndex]);
-          if (!isNaN(val) && val > max) max = val;
-        });
-        bestIndex[colIndex] = max;
+        const idx = headers.findIndex(h => h === title);
+        const val = row[idx];
+        const td = document.createElement("td");
+
+        if (idx === leagueIndex && funFactIndex >= 0) {
+          td.innerHTML = `${i === 0 ? "👑 " : ""}${val} 🏈`;
+          td.title = row[funFactIndex] || "";
+          if (i === 0) td.classList.add("crown");
+        } else {
+          td.textContent = val ?? "-";
+        }
+
+        if (idx in bestIndex && parseFloat(val) === bestIndex[idx]) {
+          let badge = "";
+          const col = headers[idx].toLowerCase();
+          if (col.includes("dash")) badge = "🏃";
+          else if (col.includes("punt")) badge = "🏈";
+          else if (col.includes("3-point") || col.includes("3 point")) badge = "🏀";
+          else if (col.includes("arm") || col.includes("strongest")) badge = "💪";
+          else if (col.includes("beer") || col.includes("pong")) badge = "🍺";
+          if (badge) td.innerHTML += ` <span class="badge">${badge}</span>`;
+        }
+
+        tr.appendChild(td);
       });
-
-      tableHeader.innerHTML = "";
-      displayHeaders.forEach(title => {
-        const th = document.createElement("th");
-        th.textContent = title;
-        tableHeader.appendChild(th);
-      });
-
-      const sorted = rows
-        .filter(row => !isNaN(parseFloat(row[totalIndex])))
-        .sort((a, b) => b[totalIndex] - a[totalIndex]);
-
-      tableBody.innerHTML = "";
-      sorted.forEach((row, i) => {
-        const tr = document.createElement("tr");
-        displayHeaders.forEach(title => {
-          const idx = headers.findIndex(h => h === title);
-          const val = row[idx];
-          const td = document.createElement("td");
-
-          if (idx === leagueIndex && funFactIndex >= 0) {
-            td.innerHTML = `${i === 0 ? "👑 " : ""}${val} 🏈`;
-            td.title = row[funFactIndex] || "";
-            if (i === 0) td.classList.add("crown");
-          } else {
-            td.textContent = val ?? "-";
-          }
-
-          if (idx in bestIndex && parseFloat(val) === bestIndex[idx]) {
-            let badge = "";
-            const col = headers[idx].toLowerCase();
-            if (col.includes("dash")) badge = "🏃";
-            else if (col.includes("punt")) badge = "🏈";
-            else if (col.includes("3-point") || col.includes("3 point")) badge = "🏀";
-            else if (col.includes("arm") || col.includes("strongest")) badge = "💪";
-            else if (col.includes("beer") || col.includes("pong")) badge = "🍺";
-            if (badge) td.innerHTML += ` <span class="badge">${badge}</span>`;
-          }
-
-          tr.appendChild(td);
-        });
-        tableBody.appendChild(tr);
-      });
-    }
-
-    document.addEventListener("DOMContentLoaded", () => {
-      fetchScores();
-      setInterval(fetchScores, 10000); // Refresh every 10 seconds
+      tableBody.appendChild(tr);
     });
-  </script>
-</body>
-</html>
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    fetchScores();
+    setInterval(fetchScores, 10000);
+  });
+</script>
