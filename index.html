@@ -123,23 +123,49 @@
     </section>
   </main>
 
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
-  <script>
-    // Replace with your actual config
-    const firebaseConfig = {
-  apiKey: "AIzaSyDxWpRXF8aMg31r-t27-pONNOB2iUJXYpg",
-  authDomain: "log-live-chat.firebaseapp.com",
-  projectId: "log-live-chat",
-  storageBucket: "log-live-chat.firebasestorage.app",
-  messagingSenderId: "557426074509",
-  appId: "1:557426074509:web:520a626d100bcd6db253c4",
-  measurementId: "G-BGNGWCFSH8"
-};
+  <!-- Firebase SDK v9+ with modules -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+    import { getDatabase, ref, push, onChildAdded, query, limitToLast } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
-    const app = firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+    const firebaseConfig = {
+      apiKey: "AIzaSyDxWpRXF8aMg31r-t27-pONNOB2iUJXYpg",
+      authDomain: "log-live-chat.firebaseapp.com",
+      projectId: "log-live-chat",
+      storageBucket: "log-live-chat.firebasestorage.app",
+      messagingSenderId: "557426074509",
+      appId: "1:557426074509:web:520a626d100bcd6db253c4",
+      measurementId: "G-BGNGWCFSH8"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const chatBox = document.getElementById("chat-box");
+    const chatForm = document.getElementById("chat-form");
+    const chatName = document.getElementById("chat-name");
+    const chatMessage = document.getElementById("chat-message");
+
+    const messagesRef = ref(db, "messages");
+    const recentMessages = query(messagesRef, limitToLast(100));
+
+    onChildAdded(recentMessages, (snapshot) => {
+      const msg = snapshot.val();
+      const p = document.createElement("p");
+      p.innerHTML = `<strong>${msg.name}</strong>: ${msg.text}`;
+      chatBox.appendChild(p);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    });
+
+    chatForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      const name = chatName.value.trim();
+      const text = chatMessage.value.trim();
+      if (!name || !text) return;
+
+      push(messagesRef, { name, text });
+      chatMessage.value = "";
+    });
   </script>
 
   <script>
@@ -214,32 +240,3 @@
           if (idx in bestIndex && parseFloat(val) === bestIndex[idx]) {
             let badge = "";
             const col = headers[idx].toLowerCase();
-            if (col.includes("dash")) badge = "🏃";
-            else if (col.includes("punt")) badge = "🏈";
-            else if (col.includes("3-point") || col.includes("3 point")) badge = "🏀";
-            else if (col.includes("strongest") || col.includes("arm")) badge = "💪";
-            else if (col.includes("beer") || col.includes("pong")) badge = "🏓";
-            if (badge) td.innerHTML += ` <span class="badge">${badge}</span>`;
-          }
-
-          tr.appendChild(td);
-        });
-        tableBody.appendChild(tr);
-      });
-    }
-
-    // Chat logic
-    const chatBox = document.getElementById("chat-box");
-    const chatForm = document.getElementById("chat-form");
-    const chatName = document.getElementById("chat-name");
-    const chatMessage = document.getElementById("chat-message");
-
-    db.ref("messages").limitToLast(100).on("child_added", (snapshot) => {
-      const msg = snapshot.val();
-      const p = document.createElement("p");
-      p.innerHTML = `<strong>${msg.name}</strong>: ${msg.text}`;
-      chatBox.appendChild(p);
-      chatBox.scrollTop = chatBox.scrollHeight;
-    });
-
-    chatForm
