@@ -123,7 +123,6 @@
     </section>
   </main>
 
-  <!-- Firebase Chat Script -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
     import { getDatabase, ref, push, onChildAdded, query, limitToLast } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
@@ -165,10 +164,8 @@
       push(messagesRef, { name, text });
       chatMessage.value = "";
     });
-  </script>
 
-  <!-- Leaderboard Logic -->
-  <script>
+    // Leaderboard logic
     const API_URL = "https://script.google.com/macros/s/AKfycbz5nn5KBCDW-MOOjwbZEmJi4VG4fehEDdnFi1S9ZRWS_SHhpRpFMg0FFCRPYKWgKxiBzg/exec";
 
     function fetchScores() {
@@ -234,7 +231,7 @@
             td.title = row[funFactIndex] || "";
             if (i === 0) td.classList.add("crown");
           } else {
-            td.textContent = val ?? "-";
+                       td.textContent = val ?? "-";
           }
 
           if (idx in bestIndex && parseFloat(val) === bestIndex[idx]) {
