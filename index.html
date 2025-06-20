@@ -1,181 +1,262 @@
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-  import {
-    getDatabase, ref, push, onChildAdded,
-    query, limitToLast, onValue, set, remove
-  } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Draft Challenge Leaderboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@700&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      background-color: #0d0d0d;
+      color: #fff;
+      font-family: 'Roboto Condensed', sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background-color: #000;
+      padding: 2em 1em 1em 1em;
+      text-align: center;
+      border-bottom: 6px solid #bba168;
+    }
+    header img {
+      max-height: 80px;
+      margin-bottom: 10px;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 2.4em;
+      color: #bba168;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    main {
+      padding: 2em 1em;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      border: 1px solid #333;
+      box-shadow: 0 0 10px rgba(187, 161, 104, 0.25);
+    }
+    th, td {
+      padding: 16px;
+      text-align: center;
+      font-size: 1em;
+    }
+    th {
+      background-color: #1a1a1a;
+      color: #bba168;
+      border-bottom: 3px solid #bba168;
+    }
+    td {
+      background-color: #0d0d0d;
+      border-bottom: 1px solid #333;
+      color: #fff;
+    }
+    tr:first-child td {
+      font-weight: bold;
+    }
+    tr:hover td {
+      background-color: rgba(255, 255, 255, 0.04);
+    }
+    .crown {
+      color: #bba168;
+      font-weight: bold;
+    }
+    .badge {
+      margin-left: 6px;
+      font-size: 1em;
+    }
+    #chat-room {
+      margin-top: 3em;
+    }
+    #chat-box {
+      height: 300px;
+      overflow-y: scroll;
+      border: 1px solid #555;
+      padding: 1em;
+      background: #111;
+      margin-bottom: 1em;
+    }
+    #chat-form input {
+      padding: 8px;
+      margin-right: 8px;
+      border: none;
+      border-radius: 4px;
+    }
+    #chat-form button {
+      background-color: #1a1a1a;
+      color: #bba168;
+      border: 1px solid #bba168;
+      padding: 8px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    #chat-form button:hover {
+      background-color: #2a2a2a;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="https://i.postimg.cc/RZcQfc7N/LOG-Transparent-Logo.png" alt="Challenge Logo" />
+    <h1>Draft Challenge Leaderboard</h1>
+  </header>
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyDxWpRXF8aMg31r-t27-pONNOB2iUJXYpg",
-    authDomain: "log-live-chat.firebaseapp.com",
-    projectId: "log-live-chat",
-    storageBucket: "log-live-chat.firebasestorage.app",
-    messagingSenderId: "557426074509",
-    appId: "1:557426074509:web:520a626d100bcd6db253c4",
-    measurementId: "G-BGNGWCFSH8"
-  };
+  <main>
+    <table id="scoreboard">
+      <thead><tr id="table-header"></tr></thead>
+      <tbody></tbody>
+    </table>
 
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
+    <section id="chat-room">
+      <h2 style="color: #bba168;">💬 Trash Talk Room</h2>
+      <div id="chat-box"></div>
+      <form id="chat-form">
+        <input id="chat-name" placeholder="Your name" required />
+        <input id="chat-message" placeholder="Message..." required style="width: 50%;" />
+        <button type="submit">Send</button>
+      </form>
+    </section>
+  </main>
+    <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+    import { getDatabase, ref, push, onChildAdded, query, limitToLast } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
-  const chatBox = document.getElementById("chat-box");
-  const chatForm = document.getElementById("chat-form");
-  const chatName = document.getElementById("chat-name");
-  const chatMessage = document.getElementById("chat-message");
-  const typingStatus = document.getElementById("typing-status");
+    // Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyDxWpRXF8aMg31r-t27-pONNOB2iUJXYpg",
+      authDomain: "log-live-chat.firebaseapp.com",
+      projectId: "log-live-chat",
+      storageBucket: "log-live-chat.firebasestorage.app",
+      messagingSenderId: "557426074509",
+      appId: "1:557426074509:web:520a626d100bcd6db253c4",
+      measurementId: "G-BGNGWCFSH8"
+    };
 
-  const messagesRef = ref(db, "messages");
-  const typingRef = ref(db, "typing");
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
 
-  let isAtBottom = true;
-  let alertBanner = null;
+    // Chat Elements
+    const chatBox = document.getElementById("chat-box");
+    const chatForm = document.getElementById("chat-form");
+    const chatName = document.getElementById("chat-name");
+    const chatMessage = document.getElementById("chat-message");
 
-  chatBox.addEventListener('scroll', () => {
-    const buffer = 10;
-    isAtBottom = chatBox.scrollHeight - chatBox.scrollTop - chatBox.clientHeight <= buffer;
-  });
+    const messagesRef = ref(db, "messages");
+    const recentMessages = query(messagesRef, limitToLast(100));
 
-  onValue(typingRef, (snapshot) => {
-    const val = snapshot.val();
-    const currentName = chatName.value.trim();
-    const names = val ? Object.values(val).filter(n => n !== currentName) : [];
-    typingStatus.textContent = names.length
-      ? `${names.join(", ")} ${names.length === 1 ? "is" : "are"} typing...`
-      : "";
-  });
-
-  onChildAdded(query(messagesRef, limitToLast(100)), (snapshot) => {
-    const msg = snapshot.val();
-    const p = document.createElement("p");
-    p.innerHTML = `<strong>${msg.name}</strong>: ${msg.text}`;
-    chatBox.appendChild(p);
-
-    if (isAtBottom) {
+    onChildAdded(recentMessages, (snapshot) => {
+      const msg = snapshot.val();
+      const p = document.createElement("p");
+      p.innerHTML = `<strong>${msg.name}</strong>: ${msg.text}`;
+      chatBox.appendChild(p);
       chatBox.scrollTop = chatBox.scrollHeight;
-      if (alertBanner) alertBanner.remove();
-    } else if (!alertBanner) {
-      alertBanner = document.createElement("div");
-      alertBanner.innerHTML = "⬇️ New message";
-      alertBanner.style.cssText = "background:#bba168;color:#000;text-align:center;cursor:pointer;";
-      alertBanner.onclick = () => {
-        chatBox.scrollTop = chatBox.scrollHeight;
-        alertBanner.remove();
-        alertBanner = null;
-      };
-      chatBox.parentNode.insertBefore(alertBanner, typingStatus);
-    }
-  });
-
-  chatMessage.addEventListener("input", () => {
-    const name = chatName.value.trim();
-    const text = chatMessage.value.trim();
-    if (name) {
-      const myTypingRef = ref(db, `typing/${name}`);
-      if (text) set(myTypingRef, name);
-      else remove(myTypingRef);
-    }
-  });
-
-  chatForm.addEventListener("submit", function (e) {
-    e.preventDefault();
-    const name = chatName.value.trim();
-    const text = chatMessage.value.trim();
-    if (!name || !text) return;
-    push(messagesRef, { name, text });
-    chatMessage.value = "";
-    remove(ref(db, `typing/${name}`));
-  });
-
-  // 🏆 Leaderboard Logic
-  const API_URL = "https://script.google.com/macros/s/AKfycbz5nn5KBCDW-MOOjwbZEmJi4VG4fehEDdnFi1S9ZRWS_SHhpRpFMg0FFCRPYKWgKxiBzg/exec";
-
-  function fetchScores() {
-    fetch(API_URL + "?scores=true")
-      .then(res => res.json())
-      .then(data => {
-        if (!Array.isArray(data) || data.length < 2) {
-          showMessage("No scores found.");
-          return;
-        }
-        updateTable(data);
-      })
-      .catch(() => showMessage("Error loading scores."));
-  }
-
-  function showMessage(msg) {
-    document.getElementById("table-header").innerHTML = "";
-    document.querySelector("#scoreboard tbody").innerHTML = `<tr><td colspan="7">${msg}</td></tr>`;
-  }
-
-  function updateTable(data) {
-    const [headers, ...rows] = data;
-    const tableHeader = document.getElementById("table-header");
-    const tableBody = document.querySelector("#scoreboard tbody");
-
-    const funFactIndex = headers.findIndex(h => h.toLowerCase().includes("fun"));
-    const leagueIndex = headers.findIndex(h => h.toLowerCase().includes("league"));
-    const totalIndex = headers.findIndex(h => h.toLowerCase().includes("total"));
-    const displayHeaders = headers.filter((_, i) => i !== funFactIndex);
-
-    const bestIndex = {};
-    displayHeaders.forEach(title => {
-      const colIndex = headers.findIndex(h => h === title);
-      let max = -Infinity;
-      rows.forEach(row => {
-        const val = parseFloat(row[colIndex]);
-        if (!isNaN(val) && val > max) max = val;
-      });
-      bestIndex[colIndex] = max;
     });
 
-    tableHeader.innerHTML = "";
-    displayHeaders.forEach(title => {
-      const th = document.createElement("th");
-      th.textContent = title;
-      tableHeader.appendChild(th);
+    chatForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      const name = chatName.value.trim();
+      const text = chatMessage.value.trim();
+      if (!name || !text) return;
+      push(messagesRef, { name, text });
+      chatMessage.value = "";
     });
 
-    const sorted = rows
-      .filter(row => !isNaN(parseFloat(row[totalIndex])))
-      .sort((a, b) => b[totalIndex] - a[totalIndex]);
+    // Leaderboard Logic
+    const API_URL = "https://script.google.com/macros/s/AKfycbz5nn5KBCDW-MOOjwbZEmJi4VG4fehEDdnFi1S9ZRWS_SHhpRpFMg0FFCRPYKWgKxiBzg/exec";
 
-    tableBody.innerHTML = "";
-    sorted.forEach((row, i) => {
-      const tr = document.createElement("tr");
+    function fetchScores() {
+      fetch(API_URL + "?scores=true")
+        .then(res => res.json())
+        .then(data => {
+          if (!Array.isArray(data) || data.length < 2) {
+            showMessage("No scores found.");
+            return;
+          }
+          updateTable(data);
+        })
+        .catch(() => showMessage("Error loading scores."));
+    }
+
+    function showMessage(msg) {
+      document.getElementById("table-header").innerHTML = "";
+      document.querySelector("#scoreboard tbody").innerHTML = `<tr><td colspan="7">${msg}</td></tr>`;
+    }
+
+    function updateTable(data) {
+      const [headers, ...rows] = data;
+      const tableHeader = document.getElementById("table-header");
+      const tableBody = document.querySelector("#scoreboard tbody");
+
+      const funFactIndex = headers.findIndex(h => h.toLowerCase().includes("fun"));
+      const leagueIndex = headers.findIndex(h => h.toLowerCase().includes("league"));
+      const totalIndex = headers.findIndex(h => h.toLowerCase().includes("total"));
+      const displayHeaders = headers.filter((_, i) => i !== funFactIndex);
+
+      const bestIndex = {};
       displayHeaders.forEach(title => {
-        const idx = headers.findIndex(h => h === title);
-        const val = row[idx];
-        const td = document.createElement("td");
-
-        if (idx === leagueIndex && funFactIndex >= 0) {
-          td.innerHTML = `${i === 0 ? "👑 " : ""}${val} 🏈`;
-          td.title = row[funFactIndex] || "";
-          if (i === 0) td.classList.add("crown");
-        } else {
-          td.textContent = val ?? "-";
-        }
-
-        if (idx in bestIndex && parseFloat(val) === bestIndex[idx]) {
-          let badge = "";
-          const col = headers[idx].toLowerCase();
-          if (col.includes("dash")) badge = "🏃";
-          else if (col.includes("punt")) badge = "🏈";
-          else if (col.includes("3-point") || col.includes("3 point")) badge = "🏀";
-          else if (col.includes("arm") || col.includes("strongest")) badge = "💪";
-          else if (col.includes("beer") || col.includes("pong")) badge = "🍺";
-          if (badge) td.innerHTML += ` <span class="badge">${badge}</span>`;
-        }
-
-        tr.appendChild(td);
+        const colIndex = headers.findIndex(h => h === title);
+        let max = -Infinity;
+        rows.forEach(row => {
+          const val = parseFloat(row[colIndex]);
+          if (!isNaN(val) && val > max) max = val;
+        });
+        bestIndex[colIndex] = max;
       });
-      tableBody.appendChild(tr);
-    });
-  }
 
-  document.addEventListener("DOMContentLoaded", () => {
-    fetchScores();
-    setInterval(fetchScores, 10000);
-  });
-</script>
+      tableHeader.innerHTML = "";
+      displayHeaders.forEach(title => {
+        const th = document.createElement("th");
+        th.textContent = title;
+        tableHeader.appendChild(th);
+      });
+
+      const sorted = rows
+        .filter(row => !isNaN(parseFloat(row[totalIndex])))
+        .sort((a, b) => b[totalIndex] - a[totalIndex]);
+
+      tableBody.innerHTML = "";
+      sorted.forEach((row, i) => {
+        const tr = document.createElement("tr");
+        displayHeaders.forEach(title => {
+          const idx = headers.findIndex(h => h === title);
+          const val = row[idx];
+          const td = document.createElement("td");
+
+          if (idx === leagueIndex && funFactIndex >= 0) {
+            td.innerHTML = `${i === 0 ? "👑 " : ""}${val} 🏈`;
+            td.title = row[funFactIndex] || "";
+            if (i === 0) td.classList.add("crown");
+          } else {
+            td.textContent = val ?? "-";
+          }
+
+          if (idx in bestIndex && parseFloat(val) === bestIndex[idx]) {
+            let badge = "";
+            const col = headers[idx].toLowerCase();
+            if (col.includes("dash")) badge = "🏃";
+            else if (col.includes("punt")) badge = "🏈";
+            else if (col.includes("3-point") || col.includes("3 point")) badge = "🏀";
+            else if (col.includes("arm") || col.includes("strongest")) badge = "💪";
+            else if (col.includes("beer") || col.includes("pong")) badge = "🍺";
+            if (badge) td.innerHTML += ` <span class="badge">${badge}</span>`;
+          }
+
+          tr.appendChild(td);
+        });
+        tableBody.appendChild(tr);
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      fetchScores();
+      setInterval(fetchScores, 10000); // Refresh every 10 seconds
+    });
+  </script>
 </body>
 </html>
