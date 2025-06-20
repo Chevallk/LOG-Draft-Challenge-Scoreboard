@@ -51,7 +51,6 @@
       background-color: #0d0d0d;
       border-bottom: 1px solid #333;
       color: #fff;
-      position: relative;
     }
     tr:first-child td {
       font-weight: bold;
@@ -99,7 +98,7 @@
   </main>
 
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbxBvicwEohuNy72twGhT2r77TZA_XfBa_tUVxmKpQyqLn3dA9zPdgKQk_A8YjLfxtad/exec"; // Replace with your actual Script URL ending in /exec
+    const API_URL = "YOUR_WEB_APP_URL_HERE"; // ← Replace this with your actual URL
 
     function fetchScores() {
       fetch(API_URL)
@@ -131,14 +130,14 @@
       const displayHeaders = headers.filter((_, i) => i !== funFactIndex);
 
       const bestIndex = {};
-      displayHeaders.forEach((_, j) => {
-        const i = headers.findIndex(h => h === displayHeaders[j]);
+      displayHeaders.forEach((title, j) => {
+        const colIndex = headers.findIndex(h => h === title);
         let max = -Infinity;
         rows.forEach(row => {
-          const val = parseFloat(row[i]);
+          const val = parseFloat(row[colIndex]);
           if (!isNaN(val) && val > max) max = val;
         });
-        bestIndex[i] = max;
+        bestIndex[colIndex] = max;
       });
 
       tableHeader.innerHTML = "";
@@ -149,14 +148,15 @@
       });
 
       const sorted = rows
-        .filter(row => row.length === headers.length && !isNaN(parseFloat(row[totalIndex])))
+        .filter(row => !isNaN(parseFloat(row[totalIndex])))
         .sort((a, b) => b[totalIndex] - a[totalIndex]);
 
       tableBody.innerHTML = "";
       sorted.forEach((row, i) => {
         const tr = document.createElement("tr");
-        displayHeaders.forEach((_, j) => {
-          const idx = headers.findIndex(h => h === displayHeaders[j]);
+
+        displayHeaders.forEach(title => {
+          const idx = headers.findIndex(h => h === title);
           const cell = row[idx];
           const td = document.createElement("td");
 
@@ -180,6 +180,7 @@
 
           tr.appendChild(td);
         });
+
         tableBody.appendChild(tr);
       });
     }
