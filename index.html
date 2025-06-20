@@ -70,18 +70,6 @@
       margin-left: 6px;
       font-size: 1em;
     }
-    button {
-      background: #1a1a1a;
-      color: #bba168;
-      border: 1px solid #bba168;
-      padding: 6px 10px;
-      border-radius: 4px;
-      cursor: pointer;
-      margin: 0 6px 6px 0;
-    }
-    button:hover {
-      background-color: #2a2a2a;
-    }
   </style>
 </head>
 <body>
@@ -95,11 +83,6 @@
       <thead><tr id="table-header"></tr></thead>
       <tbody></tbody>
     </table>
-
-    <section id="polls" style="margin-top: 3em;">
-      <h2 style="color:#bba168;">🏆 Fan Polls: Predict the Winners!</h2>
-      <div id="poll-container">Loading polls...</div>
-    </section>
   </main>
 
   <script>
@@ -188,47 +171,8 @@
       });
     }
 
-    function loadPolls() {
-      fetch(API_URL + "?polls=true")
-        .then(res => res.json())
-        .then(data => {
-          const container = document.getElementById("poll-container");
-          container.innerHTML = "";
-
-          for (const category in data) {
-            const section = document.createElement("div");
-            section.style.marginBottom = "1.5em";
-            section.innerHTML = `<h3 style="color:#fff;">${category}</h3>`;
-
-            data[category].forEach(entry => {
-              const btn = document.createElement("button");
-              btn.textContent = `${entry.name} (${entry.votes} votes)`;
-              btn.onclick = () => vote(category, entry.name);
-              section.appendChild(btn);
-            });
-
-            container.appendChild(section);
-          }
-        })
-        .catch(() => {
-          document.getElementById("poll-container").innerHTML =
-            "<p style='color:#aaa;'>Unable to load polls</p>";
-        });
-    }
-
-    function vote(category, name) {
-      fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ category, name })
-      })
-        .then(() => loadPolls())
-        .catch(err => console.error("Vote error:", err));
-    }
-
     document.addEventListener("DOMContentLoaded", () => {
       fetchScores();
-      loadPolls();
       setInterval(fetchScores, 5000);
     });
   </script>
