@@ -12,7 +12,7 @@
     }
     header {
       background-color: #000;
-      padding: 2em 1em 1em 1em;
+      padding: 2em 1em 1em;
       text-align: center;
       border-bottom: 6px solid #bba168;
     }
@@ -32,46 +32,21 @@
       max-width: 1000px;
       margin: 0 auto;
     }
-    table {
-      width: 100%;
-      border-collapse: separate;
-      border-spacing: 0;
-      border: 1px solid #333;
-      box-shadow: 0 0 10px rgba(187, 161, 104, 0.25);
+    #username-picker {
+      margin-bottom: 2em;
     }
-    th, td {
-      padding: 16px;
-      text-align: center;
-      font-size: 1em;
-    }
-    th {
-      background-color: #1a1a1a;
+    #name-options button {
+      background: #1a1a1a;
       color: #bba168;
-      border-bottom: 3px solid #bba168;
+      padding: 10px 14px;
+      border: 1px solid #bba168;
+      border-radius: 6px;
+      margin: 6px;
+      cursor: pointer;
     }
-    td {
-      background-color: #0d0d0d;
-      border-bottom: 1px solid #333;
-      color: #fff;
-    }
-    tr:first-child td {
-      font-weight: bold;
-    }
-    tr:hover td {
-      background-color: rgba(255, 255, 255, 0.04);
-    }
-    .crown {
-      color: #bba168;
-      font-weight: bold;
-    }
-    .badge {
-      margin-left: 6px;
-      font-size: 1em;
-    }
-
-    /* Chat Enhancements */
-    #chat-room {
-      margin-top: 3em;
+    #name-options {
+      display: flex;
+      flex-wrap: wrap;
     }
     #chat-box {
       height: 300px;
@@ -90,23 +65,13 @@
       word-wrap: break-word;
     }
     #typing-status {
-      color: #bba168;
       font-style: italic;
+      color: #bba168;
       height: 1.5em;
-      margin-bottom: 0.5em;
     }
-    #chat-alert {
-      background: #bba168;
-      color: #000;
-      padding: 0.5em;
-      text-align: center;
-      font-weight: bold;
-      cursor: pointer;
-      display: none;
-    }
-    #chat-form input {
-      padding: 8px;
-      margin-right: 8px;
+    #chat-form input,
+    #chat-form button {
+      padding: 10px;
       border: none;
       border-radius: 4px;
     }
@@ -114,12 +79,29 @@
       background-color: #1a1a1a;
       color: #bba168;
       border: 1px solid #bba168;
-      padding: 8px 14px;
-      border-radius: 4px;
       cursor: pointer;
     }
-    #chat-form button:hover {
-      background-color: #2a2a2a;
+    table {
+      width: 100%;
+      margin-top: 2em;
+      border: 1px solid #333;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #333;
+    }
+    th {
+      background-color: #1a1a1a;
+      color: #bba168;
+    }
+    .crown {
+      color: #bba168;
+      font-weight: bold;
+    }
+    .badge {
+      margin-left: 6px;
+      font-size: 1em;
     }
   </style>
 </head>
@@ -130,27 +112,34 @@
   </header>
 
   <main>
-    <table id="scoreboard">
-      <thead><tr id="table-header"></tr></thead>
-      <tbody></tbody>
-    </table>
+    <!-- Username Picker -->
+    <div id="username-picker">
+      <h3 style="color:#bba168;">Choose Your Username</h3>
+      <div id="name-options"></div>
+    </div>
 
-    <section id="chat-room">
-      <h2 style="color: #bba168;">💬 Trash Talk Room</h2>
+    <!-- Chat Section -->
+    <section id="chat-room" style="display:none;">
       <div id="chat-box"></div>
-      <div id="typing-status" style="color: #bba168; font-style: italic; height: 1.5em; margin-bottom: 0.5em;"></div>
+      <div id="typing-status"></div>
       <form id="chat-form">
-        <input id="chat-name" placeholder="Your name" required />
+        <input type="hidden" id="chat-name" />
         <input id="chat-message" placeholder="Message..." required style="width: 50%;" />
         <button type="submit">Send</button>
       </form>
     </section>
+
+    <!-- Leaderboard Table -->
+    <table id="scoreboard">
+      <thead><tr id="table-header"></tr></thead>
+      <tbody></tbody>
+    </table>
   </main>
-  <script type="module">
+<script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
   import {
-    getDatabase, ref, push, onChildAdded,
-    query, limitToLast, onValue, set, remove
+    getDatabase, ref, set, push, runTransaction,
+    onValue, onChildAdded, query, limitToLast, remove
   } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
   const firebaseConfig = {
@@ -166,8 +155,11 @@
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
 
-  const chatBox = document.getElementById("chat-box");
+  const namePicker = document.getElementById("username-picker");
+  const nameOptions = document.getElementById("name-options");
+  const chatRoom = document.getElementById("chat-room");
   const chatForm = document.getElementById("chat-form");
+  const chatBox = document.getElementById("chat-box");
   const chatName = document.getElementById("chat-name");
   const chatMessage = document.getElementById("chat-message");
   const typingStatus = document.getElementById("typing-status");
@@ -175,68 +167,71 @@
   const messagesRef = ref(db, "messages");
   const typingRef = ref(db, "typing");
 
-  // Track scroll for new message alerts
-  let isAtBottom = true;
-  let alertBanner = null;
-
-  chatBox.addEventListener("scroll", () => {
-    const buffer = 10;
-    isAtBottom = chatBox.scrollHeight - chatBox.scrollTop - chatBox.clientHeight <= buffer;
+  // Render available usernames
+  onValue(ref(db, "usernames"), (snap) => {
+    const data = snap.val();
+    nameOptions.innerHTML = "";
+    Object.entries(data).forEach(([name, claimed]) => {
+      if (!claimed) {
+        const btn = document.createElement("button");
+        btn.textContent = name;
+        btn.onclick = () => lockInName(name);
+        nameOptions.appendChild(btn);
+      }
+    });
   });
 
-  // Typing indicator
-  onValue(typingRef, (snapshot) => {
-    const val = snapshot.val();
-    const self = chatName.value.trim();
-    const names = val ? Object.values(val).filter(n => n !== self) : [];
-    typingStatus.textContent = names.length
-      ? `${names.join(", ")} ${names.length === 1 ? "is" : "are"} typing...`
-      : "";
-  });
+  function lockInName(name) {
+    const userRef = ref(db, `usernames/${name}`);
+    runTransaction(userRef, (val) => val === null ? true : undefined).then(({ committed }) => {
+      if (committed) {
+        chatName.value = name;
+        namePicker.style.display = "none";
+        chatRoom.style.display = "block";
+        const banner = document.createElement("div");
+        banner.textContent = `🎮 You are: ${name}`;
+        banner.style = "color:#bba168;margin-bottom:1em;";
+        chatForm.parentNode.insertBefore(banner, chatForm);
+      } else {
+        alert("That name was taken. Please choose another.");
+      }
+    });
+  }
 
-  // Display messages
-  onChildAdded(query(messagesRef, limitToLast(100)), (snapshot) => {
-    const msg = snapshot.val();
+  // Chat logic
+  onChildAdded(query(messagesRef, limitToLast(100)), (snap) => {
+    const msg = snap.val();
     const p = document.createElement("p");
     p.innerHTML = `<strong>${msg.name}</strong>: ${msg.text}`;
     chatBox.appendChild(p);
+    chatBox.scrollTop = chatBox.scrollHeight;
+  });
 
-    if (isAtBottom) {
-      chatBox.scrollTop = chatBox.scrollHeight;
-      if (alertBanner) alertBanner.remove();
-    } else if (!alertBanner) {
-      alertBanner = document.createElement("div");
-      alertBanner.textContent = "⬇️ New message";
-      alertBanner.id = "chat-alert";
-      alertBanner.onclick = () => {
-        chatBox.scrollTop = chatBox.scrollHeight;
-        alertBanner.remove();
-        alertBanner = null;
-      };
-      chatBox.parentNode.insertBefore(alertBanner, typingStatus);
-      alertBanner.style.display = "block";
+  chatMessage.addEventListener("input", () => {
+    const myRef = ref(db, `typing/${chatName.value}`);
+    if (chatMessage.value.trim()) {
+      set(myRef, chatName.value);
+    } else {
+      remove(myRef);
     }
   });
 
-  // Handle typing
-  chatMessage.addEventListener("input", () => {
-    const name = chatName.value.trim();
-    const text = chatMessage.value.trim();
-    if (name) {
-      const myTypingRef = ref(db, `typing/${name}`);
-      if (text) set(myTypingRef, name);
-      else remove(myTypingRef);
-    }
+  onValue(typingRef, (snap) => {
+    const val = snap.val() || {};
+    const others = Object.values(val).filter(n => n !== chatName.value);
+    typingStatus.textContent = others.length
+      ? `${others.join(", ")} ${others.length === 1 ? "is" : "are"} typing...`
+      : "";
   });
 
   chatForm.addEventListener("submit", (e) => {
     e.preventDefault();
-    const name = chatName.value.trim();
     const text = chatMessage.value.trim();
-    if (!name || !text) return;
-    push(messagesRef, { name, text });
-    chatMessage.value = "";
-    remove(ref(db, `typing/${name}`));
+    if (text) {
+      push(messagesRef, { name: chatName.value, text });
+      chatMessage.value = "";
+      remove(ref(db, `typing/${chatName.value}`));
+    }
   });
 
   // Leaderboard
