@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>Draft Challenge Leaderboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@700&display=swap" rel="stylesheet" />
   <style>
     body {
@@ -153,7 +154,7 @@
   </header>
 
   <main>
-    <!-- Leaderboard -->
+    <!-- Leaderboard Table -->
     <table id="scoreboard">
       <thead><tr id="table-header"></tr></thead>
       <tbody></tbody>
@@ -169,7 +170,7 @@
       <div id="media-gallery"></div>
     </section>
 
-    <!-- Chat -->
+    <!-- Live Chat -->
     <section id="chat-room">
       <h3 style="color:#bba168;">💬 Live Chat</h3>
       <div id="chat-box"></div>
@@ -181,8 +182,238 @@
       </form>
     </section>
   </main>
+  <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+  import {
+    getDatabase, ref as dbRef, set, push, onValue,
+    onChildAdded, query, limitToLast, remove, update
+  } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+  import {
+    getStorage, ref as storageRef, uploadBytes, getDownloadURL
+  } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-storage.js";
 
-  <!-- Script (linked externally to avoid long scroll — message me if you want it inline) -->
-  <script type="module" src="script.js"></script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDxWpRXF8aMg31r-t27-pONNOB2iUJXYpg",
+    authDomain: "log-live-chat.firebaseapp.com",
+    projectId: "log-live-chat",
+    storageBucket: "log-live-chat.appspot.com",
+    messagingSenderId: "557426074509",
+    appId: "1:557426074509:web:520a626d100bcd6db253c4"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const storage = getStorage(app);
+
+  // Chat
+  const chatBox = document.getElementById("chat-box");
+  const chatForm = document.getElementById("chat-form");
+  const chatName = document.getElementById("chat-name");
+  const chatMessage = document.getElementById("chat-message");
+  const typingStatus = document.getElementById("typing-status");
+
+  const messagesRef = dbRef(db, "messages");
+  const typingRef = dbRef(db, "typing");
+
+  onChildAdded(query(messagesRef, limitToLast(100)), (snap) => {
+    const msg = snap.val();
+    const p = document.createElement("p");
+    p.innerHTML = `<strong>${msg.name}</strong>: ${msg.text}`;
+    chatBox.appendChild(p);
+    chatBox.scrollTop = chatBox.scrollHeight;
+  });
+
+  chatMessage.addEventListener("input", () => {
+    const name = chatName.value.trim();
+    if (!name) return;
+    const myRef = dbRef(db, `typing/${name}`);
+    if (chatMessage.value.trim()) {
+      set(myRef, name);
+    } else {
+      remove(myRef);
+    }
+  });
+
+  onValue(typingRef, (snap) => {
+    const val = snap.val() || {};
+    const current = chatName.value.trim();
+    const others = Object.values(val).filter(n => n !== current);
+    typingStatus.textContent = others.length
+      ? `${others.join(", ")} ${others.length === 1 ? "is" : "are"} typing...`
+      : "";
+  });
+
+  chatForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const name = chatName.value.trim();
+    const text = chatMessage.value.trim();
+    if (!name || !text) return;
+    push(messagesRef, { name, text });
+    chatMessage.value = "";
+    remove(dbRef(db, `typing/${name}`));
+  });
+
+  // Media Upload
+  const uploaderName = document.getElementById("uploader-name");
+  const mediaFile = document.getElementById("media-file");
+  const uploadBtn = document.getElementById("upload-btn");
+  const uploadStatus = document.getElementById("upload-status");
+  const gallery = document.getElementById("media-gallery");
+  const galleryRef = dbRef(db, "gallery");
+
+  uploadBtn.addEventListener("click", async () => {
+    const name = uploaderName.value.trim();
+    const file = mediaFile.files[0];
+    if (!name || !file) {
+      alert("Please enter your name and select a file.");
+      return;
+    }
+
+    const filePath = `media/${Date.now()}_${file.name}`;
+    const fileRef = storageRef(storage, filePath);
+    uploadStatus.textContent = "Uploading...";
+
+    try {
+      await uploadBytes(fileRef, file);
+      const url = await getDownloadURL(fileRef);
+      const entry = {
+        name,
+        url,
+        type: file.type.startsWith("video") ? "video" : "image",
+        time: Date.now(),
+        likes: 0
+      };
+      await push(galleryRef, entry);
+      uploadStatus.textContent = "Uploaded successfully!";
+      mediaFile.value = "";
+    } catch (err) {
+      console.error(err);
+      uploadStatus.textContent = "Upload failed. Try again.";
+    }
+  });
+
+  onChildAdded(galleryRef, (snap) => {
+    const key = snap.key;
+    const { name, url, type, likes = 0 } = snap.val();
+
+    const card = document.createElement("div");
+    card.className = "media-card";
+
+    const media = document.createElement(type === "video" ? "video" : "img");
+    media.src = url;
+    if (type === "video") media.controls = true;
+    if (type === "image" && url.endsWith(".gif")) media.loading = "lazy";
+
+    const caption = document.createElement("div");
+    caption.textContent = `🧑 ${name}`;
+
+    const reactions = document.createElement("div");
+    reactions.className = "reaction-bar";
+
+    const likeBtn = document.createElement("button");
+    likeBtn.innerHTML = `❤️ ${likes}`;
+    likeBtn.onclick = () => {
+      update(dbRef(db, `gallery/${key}`), { likes: likes + 1 });
+      likeBtn.disabled = true;
+    };
+
+    reactions.appendChild(likeBtn);
+    card.appendChild(media);
+    card.appendChild(caption);
+    card.appendChild(reactions);
+    gallery.prepend(card);
+  });
+  // Leaderboard logic
+  const API_URL = "https://script.google.com/macros/s/AKfycbz5nn5KBCDW-MOOjwbZEmJi4VG4fehEDdnFi1S9ZRWS_SHhpRpFMg0FFCRPYKWgKxiBzg/exec";
+
+  function fetchScores() {
+    fetch(API_URL + "?scores=true")
+      .then(res => res.json())
+      .then(data => {
+        if (!Array.isArray(data) || data.length < 2) {
+          showMessage("No scores found.");
+          return;
+        }
+        updateTable(data);
+      })
+      .catch(() => showMessage("Error loading scores."));
+  }
+
+  function showMessage(msg) {
+    document.getElementById("table-header").innerHTML = "";
+    document.querySelector("#scoreboard tbody").innerHTML = `<tr><td colspan="7">${msg}</td></tr>`;
+  }
+
+  function updateTable(data) {
+    const [headers, ...rows] = data;
+    const tableHeader = document.getElementById("table-header");
+    const tableBody = document.querySelector("#scoreboard tbody");
+
+    const funFactIndex = headers.findIndex(h => h.toLowerCase().includes("fun"));
+    const leagueIndex = headers.findIndex(h => h.toLowerCase().includes("league"));
+    const totalIndex = headers.findIndex(h => h.toLowerCase().includes("total"));
+    const displayHeaders = headers.filter((_, i) => i !== funFactIndex);
+
+    const bestIndex = {};
+    displayHeaders.forEach(title => {
+      const colIndex = headers.findIndex(h => h === title);
+      let max = -Infinity;
+      rows.forEach(row => {
+        const val = parseFloat(row[colIndex]);
+        if (!isNaN(val) && val > max) max = val;
+      });
+      bestIndex[colIndex] = max;
+    });
+
+    tableHeader.innerHTML = "";
+    displayHeaders.forEach(title => {
+      const th = document.createElement("th");
+      th.textContent = title;
+      tableHeader.appendChild(th);
+    });
+
+    const sorted = rows
+      .filter(row => !isNaN(parseFloat(row[totalIndex])))
+      .sort((a, b) => b[totalIndex] - a[totalIndex]);
+
+    tableBody.innerHTML = "";
+    sorted.forEach((row, i) => {
+      const tr = document.createElement("tr");
+      displayHeaders.forEach(title => {
+        const idx = headers.findIndex(h => h === title);
+        const val = row[idx];
+        const td = document.createElement("td");
+
+        if (idx === leagueIndex && funFactIndex >= 0) {
+          td.innerHTML = `${i === 0 ? "👑 " : ""}${val} 🏈`;
+          td.title = row[funFactIndex] || "";
+          if (i === 0) td.classList.add("crown");
+        } else {
+          td.textContent = val ?? "-";
+        }
+
+        if (idx in bestIndex && parseFloat(val) === bestIndex[idx]) {
+          let badge = "";
+          const col = headers[idx].toLowerCase();
+          if (col.includes("dash")) badge = "🏃";
+          else if (col.includes("punt")) badge = "🏈";
+          else if (col.includes("3-point") || col.includes("3 point")) badge = "🏀";
+          else if (col.includes("arm") || col.includes("strongest")) badge = "💪";
+          else if (col.includes("beer") || col.includes("pong")) badge = "🍺";
+          if (badge) td.innerHTML += ` <span class="badge">${badge}</span>`;
+        }
+
+        tr.appendChild(td);
+      });
+      tableBody.appendChild(tr);
+    });
+  }
+
+  // Start leaderboard polling every 10 seconds
+  document.addEventListener("DOMContentLoaded", () => {
+    fetchScores();
+    setInterval(fetchScores, 10000);
+  });
+</script>
 </body>
 </html>
