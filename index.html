@@ -70,34 +70,6 @@
       margin-left: 6px;
       font-size: 1em;
     }
-    #chat-room {
-      margin-top: 3em;
-    }
-    #chat-box {
-      height: 300px;
-      overflow-y: scroll;
-      border: 1px solid #555;
-      padding: 1em;
-      background: #111;
-      margin-bottom: 1em;
-    }
-    #chat-form input {
-      padding: 8px;
-      margin-right: 8px;
-      border: none;
-      border-radius: 4px;
-    }
-    #chat-form button {
-      background-color: #1a1a1a;
-      color: #bba168;
-      border: 1px solid #bba168;
-      padding: 8px 14px;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    #chat-form button:hover {
-      background-color: #2a2a2a;
-    }
   </style>
 </head>
 <body>
@@ -111,60 +83,7 @@
       <thead><tr id="table-header"></tr></thead>
       <tbody></tbody>
     </table>
-
-    <section id="chat-room">
-      <h2 style="color: #bba168;">💬 Trash Talk Room</h2>
-      <div id="chat-box"></div>
-      <form id="chat-form">
-        <input id="chat-name" placeholder="Your name" required />
-        <input id="chat-message" placeholder="Message..." required style="width: 50%;" />
-        <button type="submit">Send</button>
-      </form>
-    </section>
   </main>
-
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-    import { getDatabase, ref, push, onChildAdded, query, limitToLast } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyDxWpRXF8aMg31r-t27-pONNOB2iUJXYpg",
-      authDomain: "log-live-chat.firebaseapp.com",
-      projectId: "log-live-chat",
-      storageBucket: "log-live-chat.firebasestorage.app",
-      messagingSenderId: "557426074509",
-      appId: "1:557426074509:web:520a626d100bcd6db253c4",
-      measurementId: "G-BGNGWCFSH8"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-
-    const chatBox = document.getElementById("chat-box");
-    const chatForm = document.getElementById("chat-form");
-    const chatName = document.getElementById("chat-name");
-    const chatMessage = document.getElementById("chat-message");
-
-    const messagesRef = ref(db, "messages");
-    const recentMessages = query(messagesRef, limitToLast(100));
-
-    onChildAdded(recentMessages, (snapshot) => {
-      const msg = snapshot.val();
-      const p = document.createElement("p");
-      p.innerHTML = `<strong>${msg.name}</strong>: ${msg.text}`;
-      chatBox.appendChild(p);
-      chatBox.scrollTop = chatBox.scrollHeight;
-    });
-
-    chatForm.addEventListener("submit", function (e) {
-      e.preventDefault();
-      const name = chatName.value.trim();
-      const text = chatMessage.value.trim();
-      if (!name || !text) return;
-      push(messagesRef, { name, text });
-      chatMessage.value = "";
-    });
-  </script>
 
   <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbxBvicwEohuNy72twGhT2r77TZA_XfBa_tUVxmKpQyqLn3dA9zPdgKQk_A8YjLfxtad/exec";
@@ -233,4 +152,29 @@
             if (i === 0) td.classList.add("crown");
           } else {
             td.textContent = val ?? "-";
-         
+          }
+
+          if (idx in bestIndex && parseFloat(val) === bestIndex[idx]) {
+            let badge = "";
+            const col = headers[idx].toLowerCase();
+            if (col.includes("dash")) badge = "🏃";
+            else if (col.includes("punt")) badge = "🏈";
+            else if (col.includes("3-point") || col.includes("3 point")) badge = "🏀";
+            else if (col.includes("arm") || col.includes("strongest")) badge = "💪";
+            else if (col.includes("beer") || col.includes("pong")) badge = "🍺";
+            if (badge) td.innerHTML += ` <span class="badge">${badge}</span>`;
+          }
+
+          tr.appendChild(td);
+        });
+        tableBody.appendChild(tr);
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      fetchScores();
+      setInterval(fetchScores, 10000); // Auto-refresh every 10s (optional)
+    });
+  </script>
+</body>
+</html>
