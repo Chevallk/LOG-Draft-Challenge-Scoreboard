@@ -70,6 +70,23 @@
       margin-left: 6px;
       font-size: 1em;
     }
+    #submission-form input {
+      padding: 8px;
+      margin-right: 8px;
+      border: none;
+      border-radius: 4px;
+    }
+    #submission-form button {
+      background-color: #1a1a1a;
+      color: #bba168;
+      border: 1px solid #bba168;
+      padding: 8px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    #submission-form button:hover {
+      background-color: #2a2a2a;
+    }
   </style>
 </head>
 <body>
@@ -83,6 +100,16 @@
       <thead><tr id="table-header"></tr></thead>
       <tbody></tbody>
     </table>
+
+    <section id="fan-submissions" style="margin-top: 3em;">
+      <h2 style="color: #bba168;">📣 Fan Submissions</h2>
+      <form id="submission-form" style="margin-bottom: 1em;">
+        <input type="text" id="name" placeholder="Your name" required />
+        <input type="text" id="message" placeholder="Your message or prediction" required />
+        <button type="submit">Submit</button>
+      </form>
+      <div id="fan-wall" style="border-top: 1px solid #555; padding-top: 1em;"></div>
+    </section>
   </main>
 
   <script>
@@ -171,19 +198,42 @@
       });
     }
 
+    function loadFanSubmissions() {
+      fetch(API_URL + "?fans=true")
+        .then(res => res.json())
+        .then(data => {
+          const fanWall = document.getElementById("fan-wall");
+          fanWall.innerHTML = "";
+          data.reverse().forEach(entry => {
+            const p = document.createElement("p");
+            p.innerHTML = `<strong>${entry.name}</strong>: ${entry.message}`;
+            fanWall.appendChild(p);
+          });
+        })
+        .catch(err => {
+          console.error("Fan submission fetch error:", err);
+        });
+    }
+
+    document.getElementById("submission-form").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const name = document.getElementById("name").value.trim();
+      const message = document.getElementById("message").value.trim();
+      if (!name || !message) return;
+
+      fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, message })
+      })
+        .then(() => {
+          document.getElementById("name").value = "";
+          document.getElementById("message").value = "";
+          loadFanSubmissions();
+        })
+        .catch(err => console.error("Submit error:", err));
+    });
+
     document.addEventListener("DOMContentLoaded", () => {
       fetchScores();
-      setInterval(fetchScores, 5000);
-    });
-  </script>
-  <section id="fan-submissions" style="margin-top: 3em;">
-  <h2 style="color: #bba168;">📣 Fan Submissions</h2>
-  <form id="submission-form" style="margin-bottom: 1em;">
-    <input type="text" id="name" placeholder="Your name" required style="padding: 8px; margin-right: 8px; width: 30%;" />
-    <input type="text" id="message" placeholder="Your message or prediction" required style="padding: 8px; width: 50%;" />
-    <button type="submit">Submit</button>
-  </form>
-  <div id="fan-wall" style="border-top: 1px solid #555; padding-top: 1em;"></div>
-</section>
-</body>
-</html>
+      loadFan
