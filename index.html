@@ -122,11 +122,11 @@
       </form>
     </section>
   </main>
-
-  <script type="module">
+    <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
     import { getDatabase, ref, push, onChildAdded, query, limitToLast } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
+    // Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyDxWpRXF8aMg31r-t27-pONNOB2iUJXYpg",
       authDomain: "log-live-chat.firebaseapp.com",
@@ -137,9 +137,11 @@
       measurementId: "G-BGNGWCFSH8"
     };
 
+    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
+    // Chat Elements
     const chatBox = document.getElementById("chat-box");
     const chatForm = document.getElementById("chat-form");
     const chatName = document.getElementById("chat-name");
@@ -165,7 +167,7 @@
       chatMessage.value = "";
     });
 
-    // Leaderboard logic
+    // Leaderboard Logic
     const API_URL = "https://script.google.com/macros/s/AKfycbz5nn5KBCDW-MOOjwbZEmJi4VG4fehEDdnFi1S9ZRWS_SHhpRpFMg0FFCRPYKWgKxiBzg/exec";
 
     function fetchScores() {
@@ -231,11 +233,8 @@
             td.title = row[funFactIndex] || "";
             if (i === 0) td.classList.add("crown");
           } else {
-                       td.textContent = val ?? "-";
+            td.textContent = val ?? "-";
           }
-
-          if (idx in bestIndex && parseFloat(val) === bestIndex[idx]) {
-            let badge = "";
 
           if (idx in bestIndex && parseFloat(val) === bestIndex[idx]) {
             let badge = "";
@@ -256,8 +255,9 @@
 
     document.addEventListener("DOMContentLoaded", () => {
       fetchScores();
-      setInterval(fetchScores, 10000);
+      setInterval(fetchScores, 10000); // Refresh every 10 seconds
     });
   </script>
 </body>
 </html>
+  
