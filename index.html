@@ -15,7 +15,7 @@
       color: #fff;
       font-family: 'Roboto Condensed', sans-serif;
       margin: 0;
-      padding-bottom: 100px;
+      padding-bottom: 80px;
     }
 
     h1, h2 {
@@ -39,7 +39,8 @@
     }
 
     th, td {
-      padding: 10px;
+      padding: 12px;
+      font-size: 1.1em;
       border: 1px solid #333;
     }
 
@@ -72,16 +73,6 @@
       user-select: none;
     }
 
-    .badge {
-      margin-left: 6px;
-      font-size: 1em;
-    }
-
-    .crown {
-      color: #bba168;
-      font-weight: bold;
-    }
-
     .media-expand-overlay {
       position: fixed;
       top: 0;
@@ -99,6 +90,30 @@
     .media-expand-overlay video {
       max-width: 90vw;
       max-height: 90vh;
+    }
+
+    .crown {
+      color: #bba168;
+      font-weight: bold;
+    }
+
+    .badge {
+      margin-left: 6px;
+      font-size: 1em;
+    }
+
+    @media (max-width: 600px) {
+      h1, h2 {
+        font-size: 1.4em;
+      }
+      th, td {
+        font-size: 0.95em;
+        padding: 8px;
+      }
+      .reaction-circle span {
+        font-size: 1em;
+        padding: 6px 10px;
+      }
     }
   </style>
 </head>
@@ -176,6 +191,31 @@
       document.body.appendChild(overlay);
     };
 
+    const downloadBtn = document.createElement("button");
+    downloadBtn.textContent = "⬇️ Download";
+    downloadBtn.style = "margin-top: 10px; padding: 6px 12px; background: #333; color: #fff; border: none; border-radius: 6px; cursor: pointer;";
+    downloadBtn.onclick = () => {
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "highlight";
+      link.click();
+    };
+
+    const emojiBtn = document.createElement("button");
+    emojiBtn.textContent = "➕ React";
+    emojiBtn.style = "margin-left: 10px; padding: 6px 12px; background: #555; color: #fff; border: none; border-radius: 6px; cursor: pointer;";
+    emojiBtn.onclick = () => {
+      const emoji = prompt("Pick an emoji to react:");
+      if (emoji) {
+        const tag = document.createElement("div");
+        tag.textContent = emoji;
+        tag.className = "bubble";
+        tag.style.background = "#333";
+        tag.style.fontSize = "1.5em";
+        bubble.appendChild(tag);
+      }
+    };
+
     const reactionRow = document.createElement("div");
     reactionRow.className = "reaction-circle";
     const emojis = ["😂","🔥","👏","💯","😮","😢","👍"];
@@ -190,6 +230,8 @@
     });
 
     bubble.appendChild(media);
+    bubble.appendChild(downloadBtn);
+    bubble.appendChild(emojiBtn);
     bubble.appendChild(reactionRow);
     mediaContainer.prepend(bubble);
 
