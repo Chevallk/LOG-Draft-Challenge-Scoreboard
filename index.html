@@ -354,14 +354,18 @@
   }
 
   function showMessage(msg) {
-    document.getElementById("table-header").innerHTML = "";
-    document.querySelector("#scoreboard tbody").innerHTML = `<tr><td colspan="7">${msg}</td></tr>`;
+    const header = document.getElementById("table-header");
+    const body = document.querySelector("#scoreboard tbody");
+    if (header) header.innerHTML = "";
+    if (body) body.innerHTML = `<tr><td colspan="7">${msg}</td></tr>`;
   }
 
   function updateTable(data) {
     const [headers, ...rows] = data;
     const tableHeader = document.getElementById("table-header");
     const tableBody = document.querySelector("#scoreboard tbody");
+
+    if (!tableHeader || !tableBody) return;
 
     const funFactIndex = headers.findIndex(h => h.toLowerCase().includes("fun"));
     const leagueIndex = headers.findIndex(h => h.toLowerCase().includes("league"));
@@ -425,7 +429,6 @@
 
   document.addEventListener("DOMContentLoaded", () => {
     fetchScores();
-    setInterval(fetchScores, 10000);
     loadMediaFeed();
   });
 </script>
