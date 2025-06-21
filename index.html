@@ -30,8 +30,6 @@
       border-radius: 12px;
       margin: 2em auto;
       max-width: 1000px;
-      position: relative;
-      z-index: 1;
     }
 
     table {
@@ -56,13 +54,6 @@
       border-radius: 12px;
       margin: 12px 0;
       font-size: 1.1em;
-    }
-
-    .bubble .username {
-      font-weight: bold;
-      color: #bba168;
-      display: block;
-      margin-bottom: 6px;
     }
 
     .reaction-circle {
@@ -91,38 +82,6 @@
       font-weight: bold;
     }
 
-    #chat-toggle {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      background: #bba168;
-      color: #000;
-      font-size: 1.4em;
-      padding: 18px 0;
-      border: none;
-      border-top: 3px solid #fff;
-      cursor: pointer;
-      z-index: 9999;
-      font-weight: bold;
-    }
-
-    #floating-chat {
-      display: none;
-      visibility: hidden;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: #111;
-      z-index: 9998;
-      padding: 20px;
-      box-sizing: border-box;
-      display: flex;
-      flex-direction: column;
-    }
-
     .media-expand-overlay {
       position: fixed;
       top: 0;
@@ -144,60 +103,36 @@
   </style>
 </head>
 <body>
-<header>
-  <img src="https://i.postimg.cc/RZcQfc7N/LOG-Transparent-Logo.png" alt="Challenge Logo" style="max-height: 80px; margin: 20px auto; display: block;" />
-  <h1>Draft Challenge</h1>
-</header>
+  <header>
+    <img src="https://i.postimg.cc/RZcQfc7N/LOG-Transparent-Logo.png" alt="Challenge Logo"
+         style="max-height: 80px; margin: 20px auto; display: block;" />
+    <h1>Draft Challenge</h1>
+  </header>
 
-<main>
-  <!-- 🏆 Leaderboard Section -->
-  <section class="section-box">
-    <h2>🏆 Draft Challenge Leaderboard</h2>
-    <table id="scoreboard">
-      <thead><tr id="table-header"></tr></thead>
-      <tbody></tbody>
-    </table>
-  </section>
+  <main>
+    <!-- 🏆 Leaderboard Section -->
+    <section class="section-box">
+      <h2>🏆 Draft Challenge Leaderboard</h2>
+      <table id="scoreboard">
+        <thead><tr id="table-header"></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
 
-  <!-- 📸 Share Your Highlights Section -->
-  <section class="section-box">
-    <h2>📸 Share Your Highlights</h2>
-    <input type="hidden" role="uploadcare-uploader" data-clearable style="margin-bottom: 1em;" />
-    <div id="media-container"></div>
-  </section>
-</main>
-
-<!-- 💬 Chat Toggle Button -->
-<button id="chat-toggle">💬 Open Chat</button>
-
-<!-- 💬 Fullscreen Floating Chat Panel -->
-<div id="floating-chat">
-  <h2 style="margin-top: 0;">💬 Live Chat</h2>
-  <div id="chat-box" style="flex: 1; overflow-y: auto; background: #222; padding: 10px; border-radius: 8px;"></div>
-  <div id="typing-status" style="font-style: italic; color: #bba168; height: 1.2em; margin-top: 6px;"></div>
-  <form id="chat-form" style="margin-top: 10px;">
-    <input id="chat-name" placeholder="Your name" required style="width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 6px; border: none;" />
-    <textarea id="chat-message" placeholder="Message..." required rows="3" style="width: 100%; padding: 12px; border-radius: 6px; border: none;"></textarea>
-    <button type="submit" style="margin-top: 10px; background: #bba168; color: #000; font-size: 1.2em; padding: 12px; border: none; border-radius: 6px; cursor: pointer;">Send</button>
-  </form>
-  <button id="close-chat" style="
-    margin-top: 10px;
-    background: #333;
-    color: #fff;
-    border: none;
-    padding: 10px;
-    border-radius: 6px;
-    cursor: pointer;
-  ">Close Chat</button>
-</div>
-<script type="module">
+    <!-- 📸 Share Your Highlights Section -->
+    <section class="section-box">
+      <h2>📸 Share Your Highlights</h2>
+      <input type="hidden" role="uploadcare-uploader" data-clearable style="margin-bottom: 1em;" />
+      <div id="media-container"></div>
+    </section>
+  </main>
+  <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
   import {
     getDatabase, ref, set, push, onValue,
-    onChildAdded, query, limitToLast, remove, update
+    onChildAdded, update
   } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
-  // 🔥 Firebase Config
   const firebaseConfig = {
     apiKey: "AIzaSyDxWpRXF8aMg31r-t27-pONNOB2iUJXYpg",
     authDomain: "log-live-chat.firebaseapp.com",
@@ -210,262 +145,166 @@
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
 
-  // ✅ DOM Initialization
-  document.addEventListener("DOMContentLoaded", () => {
-    const chatToggle = document.getElementById("chat-toggle");
-    const floatingChat = document.getElementById("floating-chat");
-    const closeChat = document.getElementById("close-chat");
+  // 📸 Media Feed
+  const mediaRef = ref(db, "media");
+  const mediaContainer = document.getElementById("media-container");
+  const reactionsCache = {};
 
-    chatToggle.onclick = () => {
-      floatingChat.style.display = "flex";
-      floatingChat.style.visibility = "visible";
-      chatToggle.style.display = "none";
+  function renderMediaCard(url, key) {
+    const isVideo = /\.(mp4|webm|ogg)$/i.test(url);
+    const bubble = document.createElement("div");
+    bubble.className = "bubble";
+
+    const media = document.createElement(isVideo ? "video" : "img");
+    media.src = url;
+    media.style.cursor = "pointer";
+    media.style.maxWidth = "100%";
+    media.style.borderRadius = "8px";
+    if (isVideo) media.controls = true;
+
+    media.onclick = () => {
+      const overlay = document.createElement("div");
+      overlay.className = "media-expand-overlay";
+      const full = document.createElement(isVideo ? "video" : "img");
+      full.src = url;
+      if (isVideo) {
+        full.controls = true;
+        full.autoplay = true;
+      }
+      overlay.onclick = () => document.body.removeChild(overlay);
+      overlay.appendChild(full);
+      document.body.appendChild(overlay);
     };
 
-    closeChat.onclick = () => {
-      floatingChat.style.display = "none";
-      floatingChat.style.visibility = "hidden";
-      chatToggle.style.display = "block";
-    };
-
-    // Parts 4–6 will go here next...
-  });
-</script>
-    // 💬 Chat Messaging Logic
-    const chatBox = document.getElementById("chat-box");
-    const chatForm = document.getElementById("chat-form");
-    const chatName = document.getElementById("chat-name");
-    const chatMessage = document.getElementById("chat-message");
-    const typingStatus = document.getElementById("typing-status");
-    const messagesRef = ref(db, "messages");
-    const typingRef = ref(db, "typing");
-
-    onChildAdded(query(messagesRef, limitToLast(100)), (snap) => {
-      const msg = snap.val();
-      const msgKey = snap.key;
-
-      const bubble = document.createElement("div");
-      bubble.className = "bubble";
-      bubble.innerHTML = `<span class="username">${msg.name}</span>${msg.text}`;
-
-      const reactionRow = document.createElement("div");
-      reactionRow.className = "reaction-circle";
-      const emojis = ["😂","🔥","👏","💯","😮","😢","👍"];
-      emojis.forEach(emoji => {
-        const span = document.createElement("span");
-        span.textContent = `${emoji} 0`;
-        span.onclick = () => {
-          const reactRef = ref(db, `reactions/${msgKey}/${emoji}`);
-          set(reactRef, (msg.reactions?.[emoji] || 0) + 1);
-        };
-        reactionRow.appendChild(span);
-      });
-
-      bubble.appendChild(reactionRow);
-      chatBox.appendChild(bubble);
-      chatBox.scrollTop = chatBox.scrollHeight;
-
-      const reactRef = ref(db, `reactions/${msgKey}`);
-      onValue(reactRef, (snap) => {
-        const data = snap.val() || {};
-        reactionRow.innerHTML = "";
-        emojis.forEach(emoji => {
-          const count = data[emoji] || 0;
-          const span = document.createElement("span");
-          span.textContent = `${emoji} ${count}`;
-          span.onclick = () => {
-            update(reactRef, { [emoji]: count + 1 });
-          };
-          reactionRow.appendChild(span);
-        });
-      });
-    });
-
-    chatMessage.addEventListener("input", () => {
-      const name = chatName.value.trim();
-      if (!name) return;
-      const myRef = ref(db, `typing/${name}`);
-      chatMessage.value.trim() ? set(myRef, name) : remove(myRef);
-    });
-
-    onValue(typingRef, (snap) => {
-      const val = snap.val() || {};
-      const current = chatName.value.trim();
-      const others = Object.values(val).filter(n => n !== current);
-      typingStatus.textContent = others.length
-        ? `${others.join(", ")} ${others.length === 1 ? "is" : "are"} typing...`
-        : "";
-    });
-
-    chatForm.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const name = chatName.value.trim();
-      const text = chatMessage.value.trim();
-      if (!name || !text) return;
-      push(messagesRef, { name, text });
-      chatMessage.value = "";
-      remove(ref(db, `typing/${name}`));
-    });
-      // 📸 Media Feed Logic
-    const mediaRef = ref(db, "media");
-    const mediaContainer = document.getElementById("media-container");
-    const reactionsCache = {};
-
-    function renderMediaCard(url, key) {
-      const isVideo = /\.(mp4|webm|ogg)$/i.test(url);
-      const bubble = document.createElement("div");
-      bubble.className = "bubble";
-
-      const media = document.createElement(isVideo ? "video" : "img");
-      media.src = url;
-      media.style.cursor = "pointer";
-      media.style.maxWidth = "100%";
-      media.style.borderRadius = "8px";
-      if (isVideo) media.controls = true;
-
-      media.onclick = () => {
-        const overlay = document.createElement("div");
-        overlay.className = "media-expand-overlay";
-        const full = document.createElement(isVideo ? "video" : "img");
-        full.src = url;
-        if (isVideo) {
-          full.controls = true;
-          full.autoplay = true;
-        }
-        overlay.onclick = () => document.body.removeChild(overlay);
-        overlay.appendChild(full);
-        document.body.appendChild(overlay);
+    const reactionRow = document.createElement("div");
+    reactionRow.className = "reaction-circle";
+    const emojis = ["😂","🔥","👏","💯","😮","😢","👍"];
+    emojis.forEach(emoji => {
+      const span = document.createElement("span");
+      span.textContent = `${emoji} 0`;
+      span.onclick = () => {
+        const reactRef = ref(db, `mediaReactions/${key}/${emoji}`);
+        set(reactRef, (reactionsCache[key]?.[emoji] || 0) + 1);
       };
+      reactionRow.appendChild(span);
+    });
 
-      const reactionRow = document.createElement("div");
-      reactionRow.className = "reaction-circle";
-      const emojis = ["😂","🔥","👏","💯","😮","😢","👍"];
+    bubble.appendChild(media);
+    bubble.appendChild(reactionRow);
+    mediaContainer.prepend(bubble);
+
+    const reactRef = ref(db, `mediaReactions/${key}`);
+    onValue(reactRef, (snap) => {
+      const data = snap.val() || {};
+      reactionsCache[key] = data;
+      reactionRow.innerHTML = "";
       emojis.forEach(emoji => {
+        const count = data[emoji] || 0;
         const span = document.createElement("span");
-        span.textContent = `${emoji} 0`;
+        span.textContent = `${emoji} ${count}`;
         span.onclick = () => {
-          const reactRef = ref(db, `mediaReactions/${key}/${emoji}`);
-          set(reactRef, (reactionsCache[key]?.[emoji] || 0) + 1);
+          update(reactRef, { [emoji]: count + 1 });
         };
         reactionRow.appendChild(span);
       });
-
-      bubble.appendChild(media);
-      bubble.appendChild(reactionRow);
-      mediaContainer.prepend(bubble);
-
-      const reactRef = ref(db, `mediaReactions/${key}`);
-      onValue(reactRef, (snap) => {
-        const data = snap.val() || {};
-        reactionsCache[key] = data;
-        reactionRow.innerHTML = "";
-        emojis.forEach(emoji => {
-          const count = data[emoji] || 0;
-          const span = document.createElement("span");
-          span.textContent = `${emoji} ${count}`;
-          span.onclick = () => {
-            update(reactRef, { [emoji]: count + 1 });
-          };
-          reactionRow.appendChild(span);
-        });
-      });
-    }
-
-    function loadMediaFeed() {
-      onChildAdded(mediaRef, (snap) => {
-        const url = snap.val();
-        const key = snap.key;
-        if (url) renderMediaCard(url, key);
-      });
-    }
-
-    uploadcare.Widget('[role=uploadcare-uploader]').onUploadComplete(function(info) {
-      const url = info.cdnUrl;
-      push(mediaRef, url);
     });
-      // 🏆 Scoreboard Logic
-    const API_URL = "https://script.google.com/macros/s/AKfycbz5nn5KBCDW-MOOjwbZEmJi4VG4fehEDdnFi1S9ZRWS_SHhpRpFMg0FFCRPYKWgKxiBzg/exec";
+  }
 
-    function fetchScores() {
-      fetch(API_URL + "?scores=true")
-        .then(res => res.json())
-        .then(data => {
-          if (!Array.isArray(data) || data.length < 2) return;
-          updateTable(data);
-        });
-    }
+  function loadMediaFeed() {
+    onChildAdded(mediaRef, (snap) => {
+      const url = snap.val();
+      const key = snap.key;
+      if (url) renderMediaCard(url, key);
+    });
+  }
 
-    function updateTable(data) {
-      const [headers, ...rows] = data;
-      const tableHeader = document.getElementById("table-header");
-      const tableBody = document.querySelector("#scoreboard tbody");
-      if (!tableHeader || !tableBody) return;
+  uploadcare.Widget('[role=uploadcare-uploader]').onUploadComplete(function(info) {
+    const url = info.cdnUrl;
+    push(mediaRef, url);
+  });
 
-      const funFactIndex = headers.findIndex(h => h.toLowerCase().includes("fun"));
-      const leagueIndex = headers.findIndex(h => h.toLowerCase().includes("league"));
-      const totalIndex = headers.findIndex(h => h.toLowerCase().includes("total"));
-      const displayHeaders = headers.filter((_, i) => i !== funFactIndex);
+  // 🏆 Scoreboard
+  const API_URL = "https://script.google.com/macros/s/AKfycbz5nn5KBCDW-MOOjwbZEmJi4VG4fehEDdnFi1S9ZRWS_SHhpRpFMg0FFCRPYKWgKxiBzg/exec";
 
-      const bestIndex = {};
+  function fetchScores() {
+    fetch(API_URL + "?scores=true")
+      .then(res => res.json())
+      .then(data => {
+        if (!Array.isArray(data) || data.length < 2) return;
+        updateTable(data);
+      });
+  }
+
+  function updateTable(data) {
+    const [headers, ...rows] = data;
+    const tableHeader = document.getElementById("table-header");
+    const tableBody = document.querySelector("#scoreboard tbody");
+    if (!tableHeader || !tableBody) return;
+
+    const funFactIndex = headers.findIndex(h => h.toLowerCase().includes("fun"));
+    const leagueIndex = headers.findIndex(h => h.toLowerCase().includes("league"));
+    const totalIndex = headers.findIndex(h => h.toLowerCase().includes("total"));
+    const displayHeaders = headers.filter((_, i) => i !== funFactIndex);
+
+    const bestIndex = {};
+    displayHeaders.forEach(title => {
+      const colIndex = headers.findIndex(h => h === title);
+      let max = -Infinity;
+      rows.forEach(row => {
+        const val = parseFloat(row[colIndex]);
+        if (!isNaN(val) && val > max) max = val;
+      });
+      bestIndex[colIndex] = max;
+    });
+
+    tableHeader.innerHTML = "";
+    displayHeaders.forEach(title => {
+      const th = document.createElement("th");
+      th.textContent = title;
+      tableHeader.appendChild(th);
+    });
+
+    const sorted = rows
+      .filter(row => !isNaN(parseFloat(row[totalIndex])))
+      .sort((a, b) => b[totalIndex] - a[totalIndex]);
+
+    tableBody.innerHTML = "";
+    sorted.forEach((row, i) => {
+      const tr = document.createElement("tr");
       displayHeaders.forEach(title => {
-        const colIndex = headers.findIndex(h => h === title);
-        let max = -Infinity;
-        rows.forEach(row => {
-          const val = parseFloat(row[colIndex]);
-          if (!isNaN(val) && val > max) max = val;
-        });
-        bestIndex[colIndex] = max;
+        const idx = headers.findIndex(h => h === title);
+        const val = row[idx];
+        const td = document.createElement("td");
+
+        if (idx === leagueIndex && funFactIndex >= 0) {
+          td.innerHTML = `${i === 0 ? "👑 " : ""}${val} 🏈`;
+          td.title = row[funFactIndex] || "";
+          if (i === 0) td.classList.add("crown");
+        } else {
+          td.textContent = val ?? "-";
+        }
+
+        if (idx in bestIndex && parseFloat(val) === bestIndex[idx]) {
+          let badge = "";
+          const col = headers[idx].toLowerCase();
+          if (col.includes("dash")) badge = "🏃";
+          else if (col.includes("punt")) badge = "🏈";
+          else if (col.includes("3-point") || col.includes("3 point")) badge = "🏀";
+          else if (col.includes("arm") || col.includes("strongest")) badge = "💪";
+          else if (col.includes("beer") || col.includes("pong")) badge = "🍺";
+          if (badge) td.innerHTML += ` <span class="badge">${badge}</span>`;
+        }
+
+        tr.appendChild(td);
       });
+      tableBody.appendChild(tr);
+    });
+  }
 
-      tableHeader.innerHTML = "";
-      displayHeaders.forEach(title => {
-        const th = document.createElement("th");
-        th.textContent = title;
-        tableHeader.appendChild(th);
-      });
-
-      const sorted = rows
-        .filter(row => !isNaN(parseFloat(row[totalIndex])))
-        .sort((a, b) => b[totalIndex] - a[totalIndex]);
-
-      tableBody.innerHTML = "";
-      sorted.forEach((row, i) => {
-        const tr = document.createElement("tr");
-        displayHeaders.forEach(title => {
-          const idx = headers.findIndex(h => h === title);
-          const val = row[idx];
-          const td = document.createElement("td");
-
-          if (idx === leagueIndex && funFactIndex >= 0) {
-            td.innerHTML = `${i === 0 ? "👑 " : ""}${val} 🏈`;
-            td.title = row[funFactIndex] || "";
-            if (i === 0) td.classList.add("crown");
-          } else {
-            td.textContent = val ?? "-";
-          }
-
-          if (idx in bestIndex && parseFloat(val) === bestIndex[idx]) {
-            let badge = "";
-            const col = headers[idx].toLowerCase();
-            if (col.includes("dash")) badge = "🏃";
-            else if (col.includes("punt")) badge = "🏈";
-            else if (col.includes("3-point") || col.includes("3 point")) badge = "🏀";
-            else if (col.includes("arm") || col.includes("strongest")) badge = "💪";
-            else if (col.includes("beer") || col.includes("pong")) badge = "🍺";
-            if (badge) td.innerHTML += ` <span class="badge">${badge}</span>`;
-          }
-
-          tr.appendChild(td);
-        });
-        tableBody.appendChild(tr);
-      });
-    }
-
-    // 🚀 Launch Everything
-    fetchScores();
-    setInterval(fetchScores, 10000);
-    loadMediaFeed();
-              });
+  // 🚀 Launch Everything
+  fetchScores();
+  setInterval(fetchScores, 10000);
+  loadMediaFeed();
 </script>
 </body>
 </html>
