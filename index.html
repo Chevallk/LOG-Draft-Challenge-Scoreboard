@@ -14,7 +14,7 @@
       color: #fff;
       font-family: 'Roboto Condensed', sans-serif;
       margin: 0;
-      padding-bottom: 60px;
+      padding-bottom: 80px;
     }
     header {
       background-color: #000;
@@ -39,7 +39,31 @@
       margin: 0 auto;
     }
 
-    /* 🫧 Bubble Styles */
+    /* 🏆 Scoreboard Table */
+    table {
+      width: 100%;
+      margin-bottom: 2em;
+      border: 1px solid #333;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #333;
+    }
+    th {
+      background-color: #1a1a1a;
+      color: #bba168;
+    }
+    .badge {
+      margin-left: 6px;
+      font-size: 1em;
+    }
+    .crown {
+      color: #bba168;
+      font-weight: bold;
+    }
+
+    /* 💬 Chat + Media Bubble Styles */
     .bubble {
       max-width: 80%;
       padding: 10px 14px;
@@ -68,27 +92,22 @@
       display: block;
       margin-bottom: 4px;
     }
-    .reaction-tag {
-      font-size: 1.2em;
-      margin-top: 4px;
-      display: inline-block;
-    }
-    .reaction-picker {
-      background: none;
-      border: none;
-      color: #888;
-      font-size: 1.2em;
-      cursor: pointer;
-      margin-left: 6px;
-    }
-    .emoji-menu {
+
+    /* 🎭 Reaction Circle */
+    .reaction-circle {
       display: flex;
-      gap: 6px;
-      margin-top: 4px;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 6px;
+      align-items: center;
     }
-    .emoji-menu span {
+    .reaction-circle span {
+      background: #222;
+      border-radius: 50%;
+      padding: 6px 10px;
+      font-size: 1.1em;
       cursor: pointer;
-      font-size: 1.2em;
+      user-select: none;
     }
 
     /* 📱 Full-width Chat Toggle Bar */
@@ -140,6 +159,10 @@
     <h1>Draft Challenge Leaderboard</h1>
   </header>
   <main>
+    <table id="scoreboard">
+      <thead><tr id="table-header"></tr></thead>
+      <tbody></tbody>
+    </table>
         <!-- 📸 Media Upload Feed -->
     <section class="media-feed">
       <h2>📸 Share Your Highlights</h2>
@@ -153,10 +176,10 @@
       <h2 style="margin-top: 0;">💬 Live Chat</h2>
       <div id="chat-box" style="height: 50vh; overflow-y: auto; padding: 10px; margin-bottom: 0.5em;"></div>
       <div id="typing-status" style="font-style: italic; color: #bba168; height: 1.2em;"></div>
-      <form id="chat-form" style="display: flex; gap: 5px; flex-wrap: wrap;">
-        <input id="chat-name" placeholder="Your name" required style="flex: 1;" />
-        <input id="chat-message" placeholder="Message..." required style="flex: 2;" />
-        <button type="submit" style="background: #bba168; color: #000;">Send</button>
+      <form id="chat-form" style="display: flex; flex-direction: column; gap: 10px;">
+        <input id="chat-name" placeholder="Your name" required style="padding: 10px; font-size: 1em;" />
+        <textarea id="chat-message" placeholder="Message..." required rows="2" style="padding: 10px; font-size: 1em;"></textarea>
+        <button type="submit" style="background: #bba168; color: #000; padding: 10px; font-size: 1.1em;">Send</button>
       </form>
     </section>
 
@@ -168,253 +191,339 @@
         margin: 10px 0;
         position: relative;
       }
-      .media-bubble .reaction-tag {
-        font-size: 1.2em;
-        margin-top: 6px;
-        display: inline-block;
-      }
-      .media-bubble .reaction-picker {
-        background: none;
-        border: none;
-        color: #888;
-        font-size: 1.2em;
-        cursor: pointer;
-        margin-left: 6px;
-      }
-      .media-bubble .emoji-menu {
+      .media-bubble .reaction-circle {
         display: flex;
-        gap: 6px;
-        margin-top: 4px;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 6px;
+        align-items: center;
       }
-      .media-bubble .emoji-menu span {
+      .media-bubble .reaction-circle span {
+        background: #333;
+        border-radius: 50%;
+        padding: 6px 10px;
+        font-size: 1.1em;
         cursor: pointer;
-        font-size: 1.2em;
+        user-select: none;
       }
     </style>
   </main>
-    <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-    import {
-      getDatabase, ref, set, push, onValue,
-      onChildAdded, query, limitToLast, remove
-    } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+  <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+  import {
+    getDatabase, ref, set, push, onValue,
+    onChildAdded, query, limitToLast, remove, update
+  } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyDxWpRXF8aMg31r-t27-pONNOB2iUJXYpg",
-      authDomain: "log-live-chat.firebaseapp.com",
-      projectId: "log-live-chat",
-      storageBucket: "log-live-chat.appspot.com",
-      messagingSenderId: "557426074509",
-      appId: "1:557426074509:web:520a626d100bcd6db253c4"
+  const firebaseConfig = {
+    apiKey: "AIzaSyDxWpRXF8aMg31r-t27-pONNOB2iUJXYpg",
+    authDomain: "log-live-chat.firebaseapp.com",
+    projectId: "log-live-chat",
+    storageBucket: "log-live-chat.appspot.com",
+    messagingSenderId: "557426074509",
+    appId: "1:557426074509:web:520a626d100bcd6db253c4"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  const chatToggle = document.getElementById("chat-toggle");
+  const chatRoom = document.getElementById("chat-room");
+  let chatOpen = false;
+
+  chatToggle.addEventListener("click", () => {
+    chatOpen = !chatOpen;
+    if (chatOpen) {
+      chatRoom.classList.add("expanded");
+      chatRoom.style.display = "block";
+      chatToggle.removeAttribute("data-unread");
+    } else {
+      chatRoom.classList.remove("expanded");
+      chatRoom.style.display = "none";
+    }
+  });
+
+  const chatBox = document.getElementById("chat-box");
+  const chatForm = document.getElementById("chat-form");
+  const chatName = document.getElementById("chat-name");
+  const chatMessage = document.getElementById("chat-message");
+  const typingStatus = document.getElementById("typing-status");
+
+  const messagesRef = ref(db, "messages");
+  const typingRef = ref(db, "typing");
+
+  onChildAdded(query(messagesRef, limitToLast(100)), (snap) => {
+    const msg = snap.val();
+    const msgKey = snap.key;
+    const isMine = msg.name === chatName.value.trim();
+
+    const bubble = document.createElement("div");
+    bubble.className = `bubble ${isMine ? "bubble-right" : "bubble-left"}`;
+    bubble.innerHTML = `<span class="username">${msg.name}</span>${msg.text}`;
+
+    const wrapper = document.createElement("div");
+    wrapper.style.clear = "both";
+    wrapper.appendChild(bubble);
+
+    const reactionRow = document.createElement("div");
+    reactionRow.className = "reaction-circle";
+
+    const emojis = ["😂","🔥","👏","💯","😮","😢","👍"];
+    emojis.forEach(emoji => {
+      const span = document.createElement("span");
+      span.textContent = `${emoji} 0`;
+      span.onclick = () => {
+        const reactRef = ref(db, `reactions/${msgKey}/${emoji}`);
+        set(reactRef, (msg.reactions?.[emoji] || 0) + 1);
+      };
+      reactionRow.appendChild(span);
+    });
+
+    bubble.appendChild(reactionRow);
+    chatBox.appendChild(wrapper);
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    if (!chatOpen) {
+      chatToggle.setAttribute("data-unread", "true");
+    }
+
+    // Sync reactions
+    const reactRef = ref(db, `reactions/${msgKey}`);
+    onValue(reactRef, (snap) => {
+      const data = snap.val() || {};
+      reactionRow.innerHTML = "";
+      emojis.forEach(emoji => {
+        const count = data[emoji] || 0;
+        const span = document.createElement("span");
+        span.textContent = `${emoji} ${count}`;
+        span.onclick = () => {
+          update(reactRef, { [emoji]: count + 1 });
+        };
+        reactionRow.appendChild(span);
+      });
+    });
+  });
+
+  chatMessage.addEventListener("input", () => {
+    const name = chatName.value.trim();
+    if (!name) return;
+    const myRef = ref(db, `typing/${name}`);
+    if (chatMessage.value.trim()) {
+      set(myRef, name);
+    } else {
+      remove(myRef);
+    }
+  });
+
+  onValue(typingRef, (snap) => {
+    const val = snap.val() || {};
+    const current = chatName.value.trim();
+    const others = Object.values(val).filter(n => n !== current);
+    typingStatus.textContent = others.length
+      ? `${others.join(", ")} ${others.length === 1 ? "is" : "are"} typing...`
+      : "";
+  });
+
+  chatForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const name = chatName.value.trim();
+    const text = chatMessage.value.trim();
+    if (!name || !text) return;
+    push(messagesRef, { name, text });
+    chatMessage.value = "";
+    remove(ref(db, `typing/${name}`));
+  });
+</script>
+<script type="module">
+  const mediaRef = ref(db, "media");
+  const mediaContainer = document.getElementById("media-container");
+
+  function renderMediaCard(url, key) {
+    const isVideo = /\.(mp4|webm|ogg)$/i.test(url);
+
+    const bubble = document.createElement("div");
+    bubble.className = "media-bubble";
+
+    const media = document.createElement(isVideo ? "video" : "img");
+    media.src = url;
+    media.style.cursor = "pointer";
+    media.style.width = "100%";
+    media.style.borderRadius = "12px";
+    if (isVideo) {
+      media.controls = true;
+      media.style.maxHeight = "250px";
+    }
+
+    media.onclick = () => {
+      const overlay = document.createElement("div");
+      overlay.style.position = "fixed";
+      overlay.style.top = 0;
+      overlay.style.left = 0;
+      overlay.style.width = "100vw";
+      overlay.style.height = "100vh";
+      overlay.style.background = "rgba(0,0,0,0.9)";
+      overlay.style.display = "flex";
+      overlay.style.alignItems = "center";
+      overlay.style.justifyContent = "center";
+      overlay.style.zIndex = 1000;
+
+      const full = document.createElement(isVideo ? "video" : "img");
+      full.src = url;
+      if (isVideo) {
+        full.controls = true;
+        full.style.maxHeight = "80vh";
+      } else {
+        full.style.maxWidth = "90vw";
+        full.style.maxHeight = "90vh";
+      }
+
+      overlay.onclick = () => document.body.removeChild(overlay);
+      overlay.appendChild(full);
+      document.body.appendChild(overlay);
     };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+    const reactionRow = document.createElement("div");
+    reactionRow.className = "reaction-circle";
 
-    const chatToggle = document.getElementById("chat-toggle");
-    const chatRoom = document.getElementById("chat-room");
-    let chatOpen = false;
-
-    chatToggle.addEventListener("click", () => {
-      chatOpen = !chatOpen;
-      if (chatOpen) {
-        chatRoom.classList.add("expanded");
-        chatRoom.style.display = "block";
-        chatToggle.removeAttribute("data-unread");
-      } else {
-        chatRoom.classList.remove("expanded");
-        chatRoom.style.display = "none";
-      }
-    });
-
-    const chatBox = document.getElementById("chat-box");
-    const chatForm = document.getElementById("chat-form");
-    const chatName = document.getElementById("chat-name");
-    const chatMessage = document.getElementById("chat-message");
-    const typingStatus = document.getElementById("typing-status");
-
-    const messagesRef = ref(db, "messages");
-    const typingRef = ref(db, "typing");
-
-    onChildAdded(query(messagesRef, limitToLast(100)), (snap) => {
-      const msg = snap.val();
-      const isMine = msg.name === chatName.value.trim();
-
-      const bubble = document.createElement("div");
-      bubble.className = `bubble ${isMine ? "bubble-right" : "bubble-left"}`;
-      bubble.innerHTML = `<span class="username">${msg.name}</span>${msg.text}`;
-
-      const wrapper = document.createElement("div");
-      wrapper.style.clear = "both";
-      wrapper.appendChild(bubble);
-
-      const reactionTag = document.createElement("span");
-      reactionTag.className = "reaction-tag";
-      reactionTag.textContent = "";
-
-      const emojiMenu = document.createElement("div");
-      emojiMenu.className = "emoji-menu";
-      emojiMenu.style.display = "none";
-
-      ["😂","🔥","👏","💯","😮","😢","👍"].forEach(emoji => {
-        const span = document.createElement("span");
-        span.textContent = emoji;
-        span.onclick = () => {
-          reactionTag.textContent = emoji;
-          emojiMenu.style.display = "none";
-        };
-        emojiMenu.appendChild(span);
-      });
-
-      const picker = document.createElement("button");
-      picker.className = "reaction-picker";
-      picker.textContent = "😊";
-      picker.onclick = () => {
-        emojiMenu.style.display = emojiMenu.style.display === "none" ? "flex" : "none";
+    const emojis = ["😂","🔥","👏","💯","😮","😢","👍"];
+    emojis.forEach(emoji => {
+      const span = document.createElement("span");
+      span.textContent = `${emoji} 0`;
+      span.onclick = () => {
+        const reactRef = ref(db, `mediaReactions/${key}/${emoji}`);
+        set(reactRef, (reactionsCache[key]?.[emoji] || 0) + 1);
       };
-
-      bubble.appendChild(reactionTag);
-      bubble.appendChild(picker);
-      bubble.appendChild(emojiMenu);
-      chatBox.appendChild(wrapper);
-      chatBox.scrollTop = chatBox.scrollHeight;
-
-      if (!chatOpen) {
-        chatToggle.setAttribute("data-unread", "true");
-      }
+      reactionRow.appendChild(span);
     });
 
-    chatMessage.addEventListener("input", () => {
-      const name = chatName.value.trim();
-      if (!name) return;
-      const myRef = ref(db, `typing/${name}`);
-      if (chatMessage.value.trim()) {
-        set(myRef, name);
-      } else {
-        remove(myRef);
-      }
+    bubble.appendChild(media);
+    bubble.appendChild(reactionRow);
+    mediaContainer.prepend(bubble);
+
+    const reactRef = ref(db, `mediaReactions/${key}`);
+    onValue(reactRef, (snap) => {
+      const data = snap.val() || {};
+      reactionsCache[key] = data;
+      reactionRow.innerHTML = "";
+      emojis.forEach(emoji => {
+        const count = data[emoji] || 0;
+        const span = document.createElement("span");
+        span.textContent = `${emoji} ${count}`;
+        span.onclick = () => {
+          update(reactRef, { [emoji]: count + 1 });
+        };
+        reactionRow.appendChild(span);
+      });
+    });
+  }
+
+  const reactionsCache = {};
+
+  function loadMediaFeed() {
+    onChildAdded(mediaRef, (snap) => {
+      const url = snap.val();
+      const key = snap.key;
+      if (url) renderMediaCard(url, key);
+    });
+  }
+
+  uploadcare.Widget('[role=uploadcare-uploader]').onUploadComplete(function(info) {
+    const url = info.cdnUrl;
+    push(mediaRef, url);
+  });
+</script>
+<script type="module">
+  // 🏆 Leaderboard Logic
+  const API_URL = "https://script.google.com/macros/s/AKfycbz5nn5KBCDW-MOOjwbZEmJi4VG4fehEDdnFi1S9ZRWS_SHhpRpFMg0FFCRPYKWgKxiBzg/exec";
+
+  function fetchScores() {
+    fetch(API_URL + "?scores=true")
+      .then(res => res.json())
+      .then(data => {
+        if (!Array.isArray(data) || data.length < 2) {
+          showMessage("No scores found.");
+          return;
+        }
+        updateTable(data);
+      })
+      .catch(() => showMessage("Error loading scores."));
+  }
+
+  function showMessage(msg) {
+    document.getElementById("table-header").innerHTML = "";
+    document.querySelector("#scoreboard tbody").innerHTML = `<tr><td colspan="7">${msg}</td></tr>`;
+  }
+
+  function updateTable(data) {
+    const [headers, ...rows] = data;
+    const tableHeader = document.getElementById("table-header");
+    const tableBody = document.querySelector("#scoreboard tbody");
+
+    const funFactIndex = headers.findIndex(h => h.toLowerCase().includes("fun"));
+    const leagueIndex = headers.findIndex(h => h.toLowerCase().includes("league"));
+    const totalIndex = headers.findIndex(h => h.toLowerCase().includes("total"));
+    const displayHeaders = headers.filter((_, i) => i !== funFactIndex);
+
+    const bestIndex = {};
+    displayHeaders.forEach(title => {
+      const colIndex = headers.findIndex(h => h === title);
+      let max = -Infinity;
+      rows.forEach(row => {
+        const val = parseFloat(row[colIndex]);
+        if (!isNaN(val) && val > max) max = val;
+      });
+      bestIndex[colIndex] = max;
     });
 
-    onValue(typingRef, (snap) => {
-      const val = snap.val() || {};
-      const current = chatName.value.trim();
-      const others = Object.values(val).filter(n => n !== current);
-      typingStatus.textContent = others.length
-        ? `${others.join(", ")} ${others.length === 1 ? "is" : "are"} typing...`
-        : "";
+    tableHeader.innerHTML = "";
+    displayHeaders.forEach(title => {
+      const th = document.createElement("th");
+      th.textContent = title;
+      tableHeader.appendChild(th);
     });
 
-    chatForm.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const name = chatName.value.trim();
-      const text = chatMessage.value.trim();
-      if (!name || !text) return;
-      push(messagesRef, { name, text });
-      chatMessage.value = "";
-      remove(ref(db, `typing/${name}`));
-    });
-    // 📸 Uploadcare + Firebase Media Feed
-    const mediaRef = ref(db, "media");
+    const sorted = rows
+      .filter(row => !isNaN(parseFloat(row[totalIndex])))
+      .sort((a, b) => b[totalIndex] - a[totalIndex]);
 
-    function renderMediaCard(url) {
-      const mediaContainer = document.getElementById("media-container");
-      const isVideo = /\.(mp4|webm|ogg)$/i.test(url);
+    tableBody.innerHTML = "";
+    sorted.forEach((row, i) => {
+      const tr = document.createElement("tr");
+      displayHeaders.forEach(title => {
+        const idx = headers.findIndex(h => h === title);
+        const val = row[idx];
+        const td = document.createElement("td");
 
-      const bubble = document.createElement("div");
-      bubble.className = "media-bubble";
-
-      const media = document.createElement(isVideo ? "video" : "img");
-      media.src = url;
-      media.style.cursor = "pointer";
-      media.style.width = "100%";
-      media.style.borderRadius = "12px";
-      if (isVideo) {
-        media.controls = true;
-        media.style.maxHeight = "250px";
-      }
-
-      media.onclick = () => {
-        const overlay = document.createElement("div");
-        overlay.style.position = "fixed";
-        overlay.style.top = 0;
-        overlay.style.left = 0;
-        overlay.style.width = "100vw";
-        overlay.style.height = "100vh";
-        overlay.style.background = "rgba(0,0,0,0.9)";
-        overlay.style.display = "flex";
-        overlay.style.alignItems = "center";
-        overlay.style.justifyContent = "center";
-        overlay.style.zIndex = 1000;
-
-        const full = document.createElement(isVideo ? "video" : "img");
-        full.src = url;
-        if (isVideo) {
-          full.controls = true;
-          full.style.maxHeight = "80vh";
+        if (idx === leagueIndex && funFactIndex >= 0) {
+          td.innerHTML = `${i === 0 ? "👑 " : ""}${val} 🏈`;
+          td.title = row[funFactIndex] || "";
+          if (i === 0) td.classList.add("crown");
         } else {
-          full.style.maxWidth = "90vw";
-          full.style.maxHeight = "90vh";
+          td.textContent = val ?? "-";
         }
 
-        overlay.onclick = () => document.body.removeChild(overlay);
-        overlay.appendChild(full);
-        document.body.appendChild(overlay);
-      };
+        if (idx in bestIndex && parseFloat(val) === bestIndex[idx]) {
+          let badge = "";
+          const col = headers[idx].toLowerCase();
+          if (col.includes("dash")) badge = "🏃";
+          else if (col.includes("punt")) badge = "🏈";
+          else if (col.includes("3-point") || col.includes("3 point")) badge = "🏀";
+          else if (col.includes("arm") || col.includes("strongest")) badge = "💪";
+          else if (col.includes("beer") || col.includes("pong")) badge = "🍺";
+          if (badge) td.innerHTML += ` <span class="badge">${badge}</span>`;
+        }
 
-      const reactionTag = document.createElement("span");
-      reactionTag.className = "reaction-tag";
-      reactionTag.textContent = "";
-
-      const emojiMenu = document.createElement("div");
-      emojiMenu.className = "emoji-menu";
-      emojiMenu.style.display = "none";
-
-      ["😂","🔥","👏","💯","😮","😢","👍"].forEach(emoji => {
-        const span = document.createElement("span");
-        span.textContent = emoji;
-        span.onclick = () => {
-          reactionTag.textContent = emoji;
-          emojiMenu.style.display = "none";
-        };
-        emojiMenu.appendChild(span);
+        tr.appendChild(td);
       });
-
-      const picker = document.createElement("button");
-      picker.className = "reaction-picker";
-      picker.textContent = "😊";
-      picker.onclick = () => {
-        emojiMenu.style.display = emojiMenu.style.display === "none" ? "flex" : "none";
-      };
-
-      const actions = document.createElement("div");
-      actions.className = "actions";
-      actions.appendChild(reactionTag);
-      actions.appendChild(picker);
-      actions.appendChild(emojiMenu);
-
-      const downloadLink = document.createElement("a");
-      downloadLink.href = url;
-      downloadLink.download = "";
-      downloadLink.textContent = "⬇️ Download";
-      downloadLink.style.marginLeft = "10px";
-      actions.appendChild(downloadLink);
-
-      bubble.appendChild(media);
-      bubble.appendChild(actions);
-      mediaContainer.prepend(bubble);
-    }
-
-    function loadMediaFeed() {
-      onChildAdded(mediaRef, (snap) => {
-        const url = snap.val();
-        if (url) renderMediaCard(url);
-      });
-    }
-
-    uploadcare.Widget('[role=uploadcare-uploader]').onUploadComplete(function(info) {
-      const url = info.cdnUrl;
-      push(mediaRef, url);
+      tableBody.appendChild(tr);
     });
-  </script>
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    fetchScores();
+    setInterval(fetchScores, 10000);
+    loadMediaFeed();
+  });
+</script>
 </body>
 </html>
