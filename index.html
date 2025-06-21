@@ -43,15 +43,20 @@
       padding: 1em;
       border-radius: 8px;
       margin-bottom: 2em;
+      max-height: 600px;
+      overflow-y: auto;
     }
     .media-card {
       background: #2a2a2a;
       padding: 1em;
       margin: 1em 0;
       border-radius: 6px;
+      cursor: pointer;
     }
     .media-card img, .media-card video {
-      max-width: 100%;
+      width: 100%;
+      max-height: 250px;
+      object-fit: cover;
       border-radius: 4px;
     }
     .media-card .actions {
@@ -77,7 +82,7 @@
     }
     table {
       width: 100%;
-      margin-top: 2em;
+      margin-bottom: 2em;
       border: 1px solid #333;
       border-collapse: collapse;
     }
@@ -89,7 +94,7 @@
       background-color: #1a1a1a;
       color: #bba168;
     }
-    /* Floating Chat Button */
+    /* Floating Chat Button (larger on mobile) */
     #chat-toggle {
       position: fixed;
       bottom: 20px;
@@ -98,16 +103,23 @@
       color: #000;
       border: none;
       border-radius: 50%;
-      width: 60px;
-      height: 60px;
-      font-size: 1.5em;
+      width: 70px;
+      height: 70px;
+      font-size: 2em;
       cursor: pointer;
       z-index: 999;
+    }
+    @media (max-width: 600px) {
+      #chat-toggle {
+        width: 80px;
+        height: 80px;
+        font-size: 2.2em;
+      }
     }
     #chat-room {
       display: none;
       position: fixed;
-      bottom: 90px;
+      bottom: 100px;
       right: 20px;
       width: 320px;
       background: #111;
@@ -125,17 +137,17 @@
   </header>
   <main>
 
-    <!-- 📸 Media Upload -->
+    <!-- 🏆 Leaderboard Table -->
+    <table id="scoreboard">
+      <thead><tr id="table-header"></tr></thead>
+      <tbody></tbody>
+    </table>
+        <!-- 📸 Media Upload Feed -->
     <section class="media-feed">
       <h2>📸 Share Your Highlights</h2>
       <input type="hidden" role="uploadcare-uploader" data-clearable style="margin-bottom: 1em;" />
       <div id="media-container"></div>
     </section>
-        <!-- 🏆 Leaderboard Table -->
-    <table id="scoreboard">
-      <thead><tr id="table-header"></tr></thead>
-      <tbody></tbody>
-    </table>
 
     <!-- 💬 Floating Chat -->
     <button id="chat-toggle" title="Open chat">💬</button>
@@ -327,10 +339,39 @@
 
       const media = document.createElement(isVideo ? "video" : "img");
       media.src = url;
+      media.style.cursor = "pointer";
       if (isVideo) {
         media.controls = true;
-        media.style.maxHeight = "300px";
+        media.style.maxHeight = "250px";
       }
+
+      media.onclick = () => {
+        const overlay = document.createElement("div");
+        overlay.style.position = "fixed";
+        overlay.style.top = 0;
+        overlay.style.left = 0;
+        overlay.style.width = "100vw";
+        overlay.style.height = "100vh";
+        overlay.style.background = "rgba(0,0,0,0.9)";
+        overlay.style.display = "flex";
+        overlay.style.alignItems = "center";
+        overlay.style.justifyContent = "center";
+        overlay.style.zIndex = 1000;
+
+        const full = document.createElement(isVideo ? "video" : "img");
+        full.src = url;
+        if (isVideo) {
+          full.controls = true;
+          full.style.maxHeight = "80vh";
+        } else {
+          full.style.maxWidth = "90vw";
+          full.style.maxHeight = "90vh";
+        }
+
+        overlay.onclick = () => document.body.removeChild(overlay);
+        overlay.appendChild(full);
+        document.body.appendChild(overlay);
+      };
 
       const actions = document.createElement("div");
       actions.className = "actions";
