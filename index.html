@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>Draft Challenge</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@700&display=swap" rel="stylesheet" />
   <script>
     UPLOADCARE_PUBLIC_KEY = "36aca0ff7641024739f7";
@@ -162,35 +163,35 @@
     <h1>Draft Challenge</h1>
   </header>
   <main>
-  <!-- 🏆 SCOREBOARD -->
-  <section class="leaderboard">
-    <h2>🏆 Draft Challenge Leaderboard</h2>
-    <table id="scoreboard">
-      <thead><tr id="table-header"></tr></thead>
-      <tbody></tbody>
-    </table>
-  </section>
+    <!-- 🏆 SCOREBOARD -->
+    <section class="leaderboard">
+      <h2>🏆 Draft Challenge Leaderboard</h2>
+      <table id="scoreboard">
+        <thead><tr id="table-header"></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
 
-  <!-- 📸 MEDIA UPLOAD FEED -->
-  <section class="media-feed">
-    <h2>📸 Share Your Highlights</h2>
-    <input type="hidden" role="uploadcare-uploader" data-clearable style="margin-bottom: 1em;" />
-    <div id="media-container"></div>
-  </section>
+    <!-- 📸 MEDIA UPLOAD FEED -->
+    <section class="media-feed">
+      <h2>📸 Share Your Highlights</h2>
+      <input type="hidden" role="uploadcare-uploader" data-clearable style="margin-bottom: 1em;" />
+      <div id="media-container"></div>
+    </section>
 
-  <!-- 💬 LIVE CHAT -->
-  <section id="chat-room">
-    <h2 style="margin-top: 0;">💬 Live Chat</h2>
-    <div id="chat-box"></div>
-    <div id="typing-status" style="font-style: italic; color: #bba168; height: 1.2em;"></div>
-    <form id="chat-form">
-      <input id="chat-name" placeholder="Your name" required />
-      <textarea id="chat-message" placeholder="Message..." required rows="3"></textarea>
-      <button type="submit">Send</button>
-    </form>
-  </section>
-</main>
-<script type="module">
+    <!-- 💬 LIVE CHAT -->
+    <section id="chat-room">
+      <h2 style="margin-top: 0;">💬 Live Chat</h2>
+      <div id="chat-box"></div>
+      <div id="typing-status" style="font-style: italic; color: #bba168; height: 1.2em;"></div>
+      <form id="chat-form">
+        <input id="chat-name" placeholder="Your name" required />
+        <textarea id="chat-message" placeholder="Message..." required rows="3"></textarea>
+        <button type="submit">Send</button>
+      </form>
+    </section>
+  </main>
+  <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
   import {
     getDatabase, ref, set, push, onValue,
@@ -209,6 +210,7 @@
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
 
+  // 🔥 Live Chat Logic
   const chatBox = document.getElementById("chat-box");
   const chatForm = document.getElementById("chat-form");
   const chatName = document.getElementById("chat-name");
@@ -227,7 +229,6 @@
 
     const reactionRow = document.createElement("div");
     reactionRow.className = "reaction-circle";
-
     const emojis = ["😂","🔥","👏","💯","😮","😢","👍"];
     emojis.forEach(emoji => {
       const span = document.createElement("span");
@@ -259,15 +260,12 @@
     });
   });
 
+  // ✍️ Typing Status
   chatMessage.addEventListener("input", () => {
     const name = chatName.value.trim();
     if (!name) return;
     const myRef = ref(db, `typing/${name}`);
-    if (chatMessage.value.trim()) {
-      set(myRef, name);
-    } else {
-      remove(myRef);
-    }
+    chatMessage.value.trim() ? set(myRef, name) : remove(myRef);
   });
 
   onValue(typingRef, (snap) => {
@@ -288,38 +286,25 @@
     chatMessage.value = "";
     remove(ref(db, `typing/${name}`));
   });
-</script>
-<script type="module">
+
+  // 📸 Media Upload Handling
   const mediaRef = ref(db, "media");
   const mediaContainer = document.getElementById("media-container");
   const reactionsCache = {};
 
   function renderMediaCard(url, key) {
     const isVideo = /\.(mp4|webm|ogg)$/i.test(url);
-
     const bubble = document.createElement("div");
     bubble.className = "media-bubble";
 
     const media = document.createElement(isVideo ? "video" : "img");
     media.src = url;
     media.style.cursor = "pointer";
-    if (isVideo) {
-      media.controls = true;
-    }
+    if (isVideo) media.controls = true;
 
     media.onclick = () => {
       const overlay = document.createElement("div");
-      overlay.style.position = "fixed";
-      overlay.style.top = 0;
-      overlay.style.left = 0;
-      overlay.style.width = "100vw";
-      overlay.style.height = "100vh";
-      overlay.style.background = "rgba(0,0,0,0.9)";
-      overlay.style.display = "flex";
-      overlay.style.alignItems = "center";
-      overlay.style.justifyContent = "center";
-      overlay.style.zIndex = 1000;
-
+      overlay.style = "position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.9);display:flex;align-items:center;justify-content:center;z-index:1000;";
       const full = document.createElement(isVideo ? "video" : "img");
       full.src = url;
       if (isVideo) {
@@ -329,7 +314,6 @@
         full.style.maxWidth = "90vw";
         full.style.maxHeight = "90vh";
       }
-
       overlay.onclick = () => document.body.removeChild(overlay);
       overlay.appendChild(full);
       document.body.appendChild(overlay);
@@ -337,7 +321,6 @@
 
     const reactionRow = document.createElement("div");
     reactionRow.className = "reaction-circle";
-
     const emojis = ["😂","🔥","👏","💯","😮","😢","👍"];
     emojis.forEach(emoji => {
       const span = document.createElement("span");
@@ -390,27 +373,15 @@
     fetch(API_URL + "?scores=true")
       .then(res => res.json())
       .then(data => {
-        if (!Array.isArray(data) || data.length < 2) {
-          showMessage("No scores found.");
-          return;
-        }
+        if (!Array.isArray(data) || data.length < 2) return;
         updateTable(data);
-      })
-      .catch(() => showMessage("Error loading scores."));
-  }
-
-  function showMessage(msg) {
-    const header = document.getElementById("table-header");
-    const body = document.querySelector("#scoreboard tbody");
-    if (header) header.innerHTML = "";
-    if (body) body.innerHTML = `<tr><td colspan="7">${msg}</td></tr>`;
+      });
   }
 
   function updateTable(data) {
     const [headers, ...rows] = data;
     const tableHeader = document.getElementById("table-header");
     const tableBody = document.querySelector("#scoreboard tbody");
-
     if (!tableHeader || !tableBody) return;
 
     const funFactIndex = headers.findIndex(h => h.toLowerCase().includes("fun"));
