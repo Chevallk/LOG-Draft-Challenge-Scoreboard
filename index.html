@@ -14,7 +14,7 @@
       color: #fff;
       font-family: 'Roboto Condensed', sans-serif;
       margin: 0;
-      padding-bottom: 60px; /* space for chat bar */
+      padding-bottom: 60px;
     }
     header {
       background-color: #000;
@@ -38,63 +38,48 @@
       max-width: 1000px;
       margin: 0 auto;
     }
-    .media-feed {
-      background: #1a1a1a;
-      padding: 1em;
-      border-radius: 8px;
-      margin-bottom: 2em;
-      max-height: 600px;
-      overflow-y: auto;
+
+    /* 🫧 Bubble Styles */
+    .bubble {
+      max-width: 80%;
+      padding: 10px 14px;
+      border-radius: 18px;
+      margin: 8px 0;
+      position: relative;
+      word-wrap: break-word;
+      display: inline-block;
+      clear: both;
     }
-    .media-card {
-      background: #2a2a2a;
-      padding: 1em;
-      margin: 1em 0;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    .media-card img, .media-card video {
-      width: 100%;
-      max-height: 250px;
-      object-fit: cover;
-      border-radius: 4px;
-    }
-    .media-card .actions {
-      margin-top: 0.5em;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-    .media-card button, .media-card a {
+    .bubble-left {
       background: #333;
-      color: #bba168;
-      padding: 0.5em 1em;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      text-decoration: none;
+      color: #fff;
+      border-bottom-left-radius: 0;
+      float: left;
     }
-    .badge {
-      margin-left: 6px;
-      font-size: 1em;
+    .bubble-right {
+      background: #bba168;
+      color: #000;
+      border-bottom-right-radius: 0;
+      float: right;
     }
-    .crown {
-      color: #bba168;
+    .bubble .username {
       font-weight: bold;
-    }
-    table {
-      width: 100%;
-      margin-bottom: 2em;
-      border: 1px solid #333;
-      border-collapse: collapse;
-    }
-    th, td {
-      padding: 10px;
-      border: 1px solid #333;
-    }
-    th {
-      background-color: #1a1a1a;
       color: #bba168;
+      display: block;
+      margin-bottom: 4px;
+    }
+    .reaction-tag {
+      font-size: 1.2em;
+      margin-top: 4px;
+      display: inline-block;
+    }
+    .reaction-picker {
+      background: none;
+      border: none;
+      color: #888;
+      font-size: 1.2em;
+      cursor: pointer;
+      margin-left: 6px;
     }
 
     /* 📱 Full-width Chat Toggle Bar */
@@ -173,37 +158,25 @@
     </section>
 
     <style>
-      .chat-bubble {
-        max-width: 80%;
-        padding: 10px 14px;
+      .media-bubble {
+        background: #222;
         border-radius: 18px;
-        margin: 8px 0;
+        padding: 10px;
+        margin: 10px 0;
         position: relative;
-        word-wrap: break-word;
-        display: inline-block;
-        clear: both;
       }
-      .chat-left {
-        background: #333;
-        color: #fff;
-        border-bottom-left-radius: 0;
-        float: left;
-      }
-      .chat-right {
-        background: #bba168;
-        color: #000;
-        border-bottom-right-radius: 0;
-        float: right;
-      }
-      .reaction-bar {
+      .media-bubble .reaction-tag {
         font-size: 1.2em;
-        margin-top: 4px;
-        display: flex;
-        gap: 10px;
-        clear: both;
+        margin-top: 6px;
+        display: inline-block;
       }
-      .reaction-bar span {
+      .media-bubble .reaction-picker {
+        background: none;
+        border: none;
+        color: #888;
+        font-size: 1.2em;
         cursor: pointer;
+        margin-left: 6px;
       }
     </style>
   </main>
@@ -254,28 +227,32 @@
     onChildAdded(query(messagesRef, limitToLast(100)), (snap) => {
       const msg = snap.val();
       const isMine = msg.name === chatName.value.trim();
+
       const bubble = document.createElement("div");
-      bubble.className = `chat-bubble ${isMine ? "chat-right" : "chat-left"}`;
-      bubble.innerHTML = `<strong>${msg.name}</strong><br>${msg.text}`;
+      bubble.className = `bubble ${isMine ? "bubble-right" : "bubble-left"}`;
+      bubble.innerHTML = `<span class="username">${msg.name}</span>${msg.text}`;
 
       const wrapper = document.createElement("div");
       wrapper.style.clear = "both";
       wrapper.appendChild(bubble);
 
-      const bar = document.createElement("div");
-      bar.className = "reaction-bar";
-      ["😂","🔥","👏","💯","😮","😢","👍"].forEach(emoji => {
-        const span = document.createElement("span");
-        let count = 0;
-        span.textContent = `${emoji} ${count}`;
-        span.onclick = () => {
-          count++;
-          span.textContent = `${emoji} ${count}`;
-        };
-        bar.appendChild(span);
-      });
+      const reactionTag = document.createElement("span");
+      reactionTag.className = "reaction-tag";
+      reactionTag.textContent = "";
 
-      wrapper.appendChild(bar);
+      const picker = document.createElement("button");
+      picker.className = "reaction-picker";
+      picker.textContent = "➕";
+      picker.onclick = () => {
+        const emojis = ["😂","🔥","👏","💯","😮","😢","👍"];
+        const choice = prompt("React with:", emojis.join(" "));
+        if (emojis.includes(choice)) {
+          reactionTag.textContent = choice;
+        }
+      };
+
+      bubble.appendChild(reactionTag);
+      bubble.appendChild(picker);
       chatBox.appendChild(wrapper);
       chatBox.scrollTop = chatBox.scrollHeight;
 
@@ -313,111 +290,21 @@
       chatMessage.value = "";
       remove(ref(db, `typing/${name}`));
     });
-          // 🏆 Leaderboard Logic
-    const API_URL = "https://script.google.com/macros/s/AKfycbz5nn5KBCDW-MOOjwbZEmJi4VG4fehEDdnFi1S9ZRWS_SHhpRpFMg0FFCRPYKWgKxiBzg/exec";
-
-    function fetchScores() {
-      fetch(API_URL + "?scores=true")
-        .then(res => res.json())
-        .then(data => {
-          if (!Array.isArray(data) || data.length < 2) {
-            showMessage("No scores found.");
-            return;
-          }
-          updateTable(data);
-        })
-        .catch(() => showMessage("Error loading scores."));
-    }
-
-    function showMessage(msg) {
-      document.getElementById("table-header").innerHTML = "";
-      document.querySelector("#scoreboard tbody").innerHTML = `<tr><td colspan="7">${msg}</td></tr>`;
-    }
-
-    function updateTable(data) {
-      const [headers, ...rows] = data;
-      const tableHeader = document.getElementById("table-header");
-      const tableBody = document.querySelector("#scoreboard tbody");
-
-      const funFactIndex = headers.findIndex(h => h.toLowerCase().includes("fun"));
-      const leagueIndex = headers.findIndex(h => h.toLowerCase().includes("league"));
-      const totalIndex = headers.findIndex(h => h.toLowerCase().includes("total"));
-      const displayHeaders = headers.filter((_, i) => i !== funFactIndex);
-
-      const bestIndex = {};
-      displayHeaders.forEach(title => {
-        const colIndex = headers.findIndex(h => h === title);
-        let max = -Infinity;
-        rows.forEach(row => {
-          const val = parseFloat(row[colIndex]);
-          if (!isNaN(val) && val > max) max = val;
-        });
-        bestIndex[colIndex] = max;
-      });
-
-      tableHeader.innerHTML = "";
-      displayHeaders.forEach(title => {
-        const th = document.createElement("th");
-        th.textContent = title;
-        tableHeader.appendChild(th);
-      });
-
-      const sorted = rows
-        .filter(row => !isNaN(parseFloat(row[totalIndex])))
-        .sort((a, b) => b[totalIndex] - a[totalIndex]);
-
-      tableBody.innerHTML = "";
-      sorted.forEach((row, i) => {
-        const tr = document.createElement("tr");
-        displayHeaders.forEach(title => {
-          const idx = headers.findIndex(h => h === title);
-          const val = row[idx];
-          const td = document.createElement("td");
-
-          if (idx === leagueIndex && funFactIndex >= 0) {
-            td.innerHTML = `${i === 0 ? "👑 " : ""}${val} 🏈`;
-            td.title = row[funFactIndex] || "";
-            if (i === 0) td.classList.add("crown");
-          } else {
-            td.textContent = val ?? "-";
-          }
-
-          if (idx in bestIndex && parseFloat(val) === bestIndex[idx]) {
-            let badge = "";
-            const col = headers[idx].toLowerCase();
-            if (col.includes("dash")) badge = "🏃";
-            else if (col.includes("punt")) badge = "🏈";
-            else if (col.includes("3-point") || col.includes("3 point")) badge = "🏀";
-            else if (col.includes("arm") || col.includes("strongest")) badge = "💪";
-            else if (col.includes("beer") || col.includes("pong")) badge = "🍺";
-            if (badge) td.innerHTML += ` <span class="badge">${badge}</span>`;
-          }
-
-          tr.appendChild(td);
-        });
-        tableBody.appendChild(tr);
-      });
-    }
-
-    document.addEventListener("DOMContentLoaded", () => {
-      fetchScores();
-      setInterval(fetchScores, 10000);
-      loadMediaFeed();
-    });
-
-    // 📸 Uploadcare + Firebase Media Feed
+          // 📸 Uploadcare + Firebase Media Feed
     const mediaRef = ref(db, "media");
 
     function renderMediaCard(url) {
       const mediaContainer = document.getElementById("media-container");
       const isVideo = /\.(mp4|webm|ogg)$/i.test(url);
 
-      const card = document.createElement("div");
-      card.className = "media-card";
+      const bubble = document.createElement("div");
+      bubble.className = "media-bubble";
 
       const media = document.createElement(isVideo ? "video" : "img");
       media.src = url;
       media.style.cursor = "pointer";
+      media.style.width = "100%";
+      media.style.borderRadius = "12px";
       if (isVideo) {
         media.controls = true;
         media.style.maxHeight = "250px";
@@ -451,29 +338,36 @@
         document.body.appendChild(overlay);
       };
 
+      const reactionTag = document.createElement("span");
+      reactionTag.className = "reaction-tag";
+      reactionTag.textContent = "";
+
+      const picker = document.createElement("button");
+      picker.className = "reaction-picker";
+      picker.textContent = "➕";
+      picker.onclick = () => {
+        const emojis = ["😂","🔥","👏","💯","😮","😢","👍"];
+        const choice = prompt("React with:", emojis.join(" "));
+        if (emojis.includes(choice)) {
+          reactionTag.textContent = choice;
+        }
+      };
+
       const actions = document.createElement("div");
       actions.className = "actions";
-
-      ["😂","🔥","👏","💯","😮","😢","👍"].forEach(emoji => {
-        const btn = document.createElement("button");
-        let count = 0;
-        btn.textContent = `${emoji} ${count}`;
-        btn.onclick = () => {
-          count++;
-          btn.textContent = `${emoji} ${count}`;
-        };
-        actions.appendChild(btn);
-      });
+      actions.appendChild(reactionTag);
+      actions.appendChild(picker);
 
       const downloadLink = document.createElement("a");
       downloadLink.href = url;
       downloadLink.download = "";
       downloadLink.textContent = "⬇️ Download";
+      downloadLink.style.marginLeft = "10px";
       actions.appendChild(downloadLink);
 
-      card.appendChild(media);
-      card.appendChild(actions);
-      mediaContainer.prepend(card);
+      bubble.appendChild(media);
+      bubble.appendChild(actions);
+      mediaContainer.prepend(bubble);
     }
 
     function loadMediaFeed() {
@@ -490,3 +384,4 @@
   </script>
 </body>
 </html>
+    
