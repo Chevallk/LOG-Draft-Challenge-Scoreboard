@@ -89,6 +89,33 @@
       background-color: #1a1a1a;
       color: #bba168;
     }
+    /* Floating Chat Button */
+    #chat-toggle {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #bba168;
+      color: #000;
+      border: none;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      font-size: 1.5em;
+      cursor: pointer;
+      z-index: 999;
+    }
+    #chat-room {
+      display: none;
+      position: fixed;
+      bottom: 90px;
+      right: 20px;
+      width: 320px;
+      background: #111;
+      border: 1px solid #555;
+      border-radius: 8px;
+      padding: 1em;
+      z-index: 998;
+    }
   </style>
 </head>
 <body>
@@ -110,15 +137,15 @@
       <tbody></tbody>
     </table>
 
-    <!-- 💬 Live Chat -->
+    <!-- 💬 Floating Chat -->
+    <button id="chat-toggle" title="Open chat">💬</button>
     <section id="chat-room">
-      <h2>💬 Live Chat</h2>
-      <div id="chat-box" style="height: 300px; overflow-y: auto; border: 1px solid #555; padding: 1em; background: #111; margin-bottom: 1em;"></div>
-      <div id="typing-status" style="font-style: italic; color: #bba168; height: 1.5em;"></div>
-      <form id="chat-form">
-        <input id="chat-name" placeholder="Your name" required />
-        <input id="chat-message" placeholder="Message..." required style="width: 50%;" />
-        <button type="submit">Send</button>
+      <div id="chat-box" style="height: 200px; overflow-y: auto; background: #222; padding: 10px; border-radius: 4px; margin-bottom: 0.5em;"></div>
+      <div id="typing-status" style="font-style: italic; color: #bba168; height: 1.2em;"></div>
+      <form id="chat-form" style="display: flex; gap: 5px; flex-wrap: wrap;">
+        <input id="chat-name" placeholder="Your name" required style="flex: 1;" />
+        <input id="chat-message" placeholder="Message..." required style="flex: 2;" />
+        <button type="submit" style="background: #bba168; color: #000;">Send</button>
       </form>
     </section>
   </main>
@@ -141,6 +168,13 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
+
+    // 💬 Floating Chat Toggle
+    const chatToggle = document.getElementById("chat-toggle");
+    const chatRoom = document.getElementById("chat-room");
+    chatToggle.addEventListener("click", () => {
+      chatRoom.style.display = chatRoom.style.display === "none" ? "block" : "none";
+    });
 
     // 💬 Live Chat Logic
     const chatBox = document.getElementById("chat-box");
@@ -278,12 +312,14 @@
     document.addEventListener("DOMContentLoaded", () => {
       fetchScores();
       setInterval(fetchScores, 10000);
+      loadMediaFeed();
     });
 
-    // 📸 Uploadcare Media Feed Renderer
-    uploadcare.Widget('[role=uploadcare-uploader]').onUploadComplete(function(info) {
+    // 📸 Uploadcare + Firebase Media Feed
+    const mediaRef = ref(db, "media");
+
+    function renderMediaCard(url) {
       const mediaContainer = document.getElementById("media-container");
-      const url = info.cdnUrl;
       const isVideo = /\.(mp4|webm|ogg)$/i.test(url);
 
       const card = document.createElement("div");
@@ -317,6 +353,18 @@
       card.appendChild(media);
       card.appendChild(actions);
       mediaContainer.prepend(card);
+    }
+
+    function loadMediaFeed() {
+      onChildAdded(mediaRef, (snap) => {
+        const url = snap.val();
+        if (url) renderMediaCard(url);
+      });
+    }
+
+    uploadcare.Widget('[role=uploadcare-uploader]').onUploadComplete(function(info) {
+      const url = info.cdnUrl;
+      push(mediaRef, url);
     });
   </script>
 </body>
