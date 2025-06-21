@@ -144,6 +144,35 @@
     <button type="submit">Send</button>
   </form>
 </section>
+<main>
+  <!-- 🏆 SCOREBOARD -->
+  <section class="leaderboard">
+    <h2>🏆 Draft Challenge Leaderboard</h2>
+    <table id="scoreboard">
+      <thead><tr id="table-header"></tr></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <!-- 📸 MEDIA UPLOAD FEED -->
+  <section class="media-feed">
+    <h2>📸 Share Your Highlights</h2>
+    <input type="hidden" role="uploadcare-uploader" data-clearable style="margin-bottom: 1em;" />
+    <div id="media-container"></div>
+  </section>
+
+  <!-- 💬 LIVE CHAT -->
+  <section id="chat-room">
+    <h2 style="margin-top: 0;">💬 Live Chat</h2>
+    <div id="chat-box"></div>
+    <div id="typing-status" style="font-style: italic; color: #bba168; height: 1.2em;"></div>
+    <form id="chat-form">
+      <input id="chat-name" placeholder="Your name" required />
+      <textarea id="chat-message" placeholder="Message..." required rows="3"></textarea>
+      <button type="submit">Send</button>
+    </form>
+  </section>
+</main>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
   import {
