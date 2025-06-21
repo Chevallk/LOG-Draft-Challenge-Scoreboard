@@ -61,13 +61,15 @@
     }
     .media-card .actions {
       margin-top: 0.5em;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
     }
     .media-card button, .media-card a {
       background: #333;
       color: #bba168;
       padding: 0.5em 1em;
       border: none;
-      margin-right: 10px;
       border-radius: 4px;
       cursor: pointer;
       text-decoration: none;
@@ -102,15 +104,15 @@
       background: #bba168;
       color: #000;
       border: none;
-      border-radius: 50%;
-      width: 80px;
-      height: 80px;
-      font-size: 2em;
+      border-radius: 12px;
+      width: 120px;
+      height: 50px;
+      font-size: 1.2em;
       cursor: pointer;
       z-index: 999;
     }
     #chat-toggle[data-unread="true"]::after {
-      content: "🔴";
+      content: " 🔴";
       position: absolute;
       top: -5px;
       right: -5px;
@@ -119,15 +121,27 @@
     #chat-room {
       display: none;
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
+      bottom: 80px;
+      right: 20px;
+      width: 350px;
+      max-height: 70vh;
       background: #111;
-      border-top: 6px solid #bba168;
+      border: 1px solid #555;
+      border-radius: 8px;
       padding: 1em;
       z-index: 998;
       overflow-y: auto;
+      transition: all 0.3s ease;
+    }
+    #chat-room.expanded {
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100vw;
+      height: 100vh;
+      border-radius: 0;
+      max-height: none;
     }
   </style>
 </head>
@@ -151,10 +165,10 @@
     </section>
 
     <!-- 💬 Floating Chat -->
-    <button id="chat-toggle" title="Open chat">💬</button>
+    <button id="chat-toggle" title="Open chat">💬 Chat</button>
     <section id="chat-room">
       <h2 style="margin-top: 0;">💬 Live Chat</h2>
-      <div id="chat-box" style="height: 60vh; overflow-y: auto; background: #222; padding: 10px; border-radius: 4px; margin-bottom: 0.5em;"></div>
+      <div id="chat-box" style="height: 50vh; overflow-y: auto; background: #222; padding: 10px; border-radius: 4px; margin-bottom: 0.5em;"></div>
       <div id="typing-status" style="font-style: italic; color: #bba168; height: 1.2em;"></div>
       <form id="chat-form" style="display: flex; gap: 5px; flex-wrap: wrap;">
         <input id="chat-name" placeholder="Your name" required style="flex: 1;" />
@@ -174,29 +188,32 @@
       apiKey: "AIzaSyDxWpRXF8aMg31r-t27-pONNOB2iUJXYpg",
       authDomain: "log-live-chat.firebaseapp.com",
       projectId: "log-live-chat",
-      storageBucket: "log-live-chat.firebasestorage.app",
+      storageBucket: "log-live-chat.appspot.com",
       messagingSenderId: "557426074509",
-      appId: "1:557426074509:web:520a626d100bcd6db253c4",
-      measurementId: "G-BGNGWCFSH8"
+      appId: "1:557426074509:web:520a626d100bcd6db253c4"
     };
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // 💬 Floating Chat Toggle + Notification
+    // 💬 Floating Chat Toggle + Expand
     const chatToggle = document.getElementById("chat-toggle");
     const chatRoom = document.getElementById("chat-room");
     let chatOpen = false;
 
     chatToggle.addEventListener("click", () => {
       chatOpen = !chatOpen;
-      chatRoom.style.display = chatOpen ? "block" : "none";
       if (chatOpen) {
+        chatRoom.classList.add("expanded");
         chatToggle.removeAttribute("data-unread");
+        chatRoom.style.display = "block";
+      } else {
+        chatRoom.classList.remove("expanded");
+        chatRoom.style.display = "none";
       }
     });
 
-    // 💬 Live Chat Logic
+    // 💬 Chat Logic
     const chatBox = document.getElementById("chat-box");
     const chatForm = document.getElementById("chat-form");
     const chatName = document.getElementById("chat-name");
@@ -208,9 +225,31 @@
 
     onChildAdded(query(messagesRef, limitToLast(100)), (snap) => {
       const msg = snap.val();
+      const container = document.createElement("div");
+      container.style.marginBottom = "0.5em";
+
       const p = document.createElement("p");
       p.innerHTML = `<strong>${msg.name}</strong>: ${msg.text}`;
-      chatBox.appendChild(p);
+      container.appendChild(p);
+
+      // 🎭 Emoji Reaction Bar for Chat (basic structure)
+      const bar = document.createElement("div");
+      bar.style.fontSize = "1.2em";
+      bar.style.cursor = "pointer";
+      ["😂","🔥","👏","💯","😮","😢","👍"].forEach(emoji => {
+        const span = document.createElement("span");
+        span.textContent = emoji + " 0";
+        span.style.marginRight = "10px";
+        let count = 0;
+        span.onclick = () => {
+          count++;
+          span.textContent = emoji + " " + count;
+        };
+        bar.appendChild(span);
+      });
+
+      container.appendChild(bar);
+      chatBox.appendChild(container);
       chatBox.scrollTop = chatBox.scrollHeight;
 
       if (!chatOpen) {
@@ -247,7 +286,7 @@
       chatMessage.value = "";
       remove(ref(db, `typing/${name}`));
     });
-          // 🏆 Leaderboard Logic
+        // 🏆 Leaderboard Logic
     const API_URL = "https://script.google.com/macros/s/AKfycbz5nn5KBCDW-MOOjwbZEmJi4VG4fehEDdnFi1S9ZRWS_SHhpRpFMg0FFCRPYKWgKxiBzg/exec";
 
     function fetchScores() {
@@ -388,21 +427,24 @@
       const actions = document.createElement("div");
       actions.className = "actions";
 
-      const likeBtn = document.createElement("button");
-      likeBtn.textContent = "❤️ Like (0)";
-      let likes = 0;
-      likeBtn.onclick = () => {
-        likes++;
-        likeBtn.textContent = `❤️ Like (${likes})`;
-      };
+      // 🎭 Emoji Reaction Bar for Media
+      ["😂","🔥","👏","💯","😮","😢","👍"].forEach(emoji => {
+        const btn = document.createElement("button");
+        let count = 0;
+        btn.textContent = `${emoji} ${count}`;
+        btn.onclick = () => {
+          count++;
+          btn.textContent = `${emoji} ${count}`;
+        };
+        actions.appendChild(btn);
+      });
 
       const downloadLink = document.createElement("a");
       downloadLink.href = url;
       downloadLink.download = "";
       downloadLink.textContent = "⬇️ Download";
-
-      actions.appendChild(likeBtn);
       actions.appendChild(downloadLink);
+
       card.appendChild(media);
       card.appendChild(actions);
       mediaContainer.prepend(card);
