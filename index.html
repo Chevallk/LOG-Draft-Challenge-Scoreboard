@@ -67,6 +67,14 @@
       cursor: pointer;
       text-decoration: none;
     }
+    .badge {
+      margin-left: 6px;
+      font-size: 1em;
+    }
+    .crown {
+      color: #bba168;
+      font-weight: bold;
+    }
     table {
       width: 100%;
       margin-top: 2em;
@@ -80,14 +88,6 @@
     th {
       background-color: #1a1a1a;
       color: #bba168;
-    }
-    .crown {
-      color: #bba168;
-      font-weight: bold;
-    }
-    .badge {
-      margin-left: 6px;
-      font-size: 1em;
     }
   </style>
 </head>
@@ -104,13 +104,13 @@
       <input type="hidden" role="uploadcare-uploader" data-clearable style="margin-bottom: 1em;" />
       <div id="media-container"></div>
     </section>
-
-    <!-- 🏆 Leaderboard Table -->
+        <!-- 🏆 Leaderboard Table -->
     <table id="scoreboard">
       <thead><tr id="table-header"></tr></thead>
       <tbody></tbody>
     </table>
-        <!-- 💬 Live Chat -->
+
+    <!-- 💬 Live Chat -->
     <section id="chat-room">
       <h2>💬 Live Chat</h2>
       <div id="chat-box" style="height: 300px; overflow-y: auto; border: 1px solid #555; padding: 1em; background: #111; margin-bottom: 1em;"></div>
@@ -142,7 +142,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // Live Chat Logic
+    // 💬 Live Chat Logic
     const chatBox = document.getElementById("chat-box");
     const chatForm = document.getElementById("chat-form");
     const chatName = document.getElementById("chat-name");
@@ -280,12 +280,11 @@
       setInterval(fetchScores, 10000);
     });
 
-    // 📸 Uploadcare Media Preview + Reactions
+    // 📸 Uploadcare Media Feed Renderer
     uploadcare.Widget('[role=uploadcare-uploader]').onUploadComplete(function(info) {
-      console.log("Uploaded File URL:", info.cdnUrl);
       const mediaContainer = document.getElementById("media-container");
       const url = info.cdnUrl;
-      const isVideo = url.match(/\.(mp4|webm|ogg)$/i);
+      const isVideo = /\.(mp4|webm|ogg)$/i.test(url);
 
       const card = document.createElement("div");
       card.className = "media-card";
@@ -322,4 +321,3 @@
   </script>
 </body>
 </html>
-    
