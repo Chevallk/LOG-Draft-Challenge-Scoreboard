@@ -1,27 +1,118 @@
-<header>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Draft Challenge</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@700&display=swap" rel="stylesheet" />
+  <script>
+    UPLOADCARE_PUBLIC_KEY = "36aca0ff7641024739f7";
+  </script>
+  <script src="https://ucarecdn.com/libs/widget/3.x/uploadcare.full.min.js"></script>
+  <style>
+    body {
+      background-color: #0d0d0d;
+      color: #fff;
+      font-family: 'Roboto Condensed', sans-serif;
+      margin: 0;
+      padding-bottom: 80px;
+    }
+
+    h1, h2 {
+      color: #bba168;
+    }
+
+    .section-box {
+      background: #1a1a1a;
+      padding: 20px;
+      border-radius: 12px;
+      margin: 2em auto;
+      max-width: 1000px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1em;
+    }
+
+    th, td {
+      padding: 10px;
+      border: 1px solid #333;
+    }
+
+    th {
+      background-color: #333;
+      color: #fff;
+    }
+
+    .bubble {
+      background: #222;
+      padding: 16px;
+      border-radius: 12px;
+      margin: 12px 0;
+      font-size: 1.1em;
+    }
+
+    .bubble .username {
+      font-weight: bold;
+      color: #bba168;
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .reaction-circle {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .reaction-circle span {
+      background: #333;
+      border-radius: 50%;
+      padding: 8px 12px;
+      font-size: 1.2em;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .badge {
+      margin-left: 6px;
+      font-size: 1em;
+    }
+
+    .crown {
+      color: #bba168;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <header>
   <img src="https://i.postimg.cc/RZcQfc7N/LOG-Transparent-Logo.png" alt="Challenge Logo" style="max-height: 80px; margin: 20px auto; display: block;" />
-  <h1 style="text-align: center; color: #bba168; font-family: 'Roboto Condensed', sans-serif;">Draft Challenge</h1>
+  <h1 style="text-align: center;">Draft Challenge</h1>
 </header>
 
-<main style="max-width: 1000px; margin: 0 auto; padding: 2em 1em;">
-  <!-- 🏆 Leaderboard Box -->
-  <section style="background: #1a1a1a; padding: 20px; border-radius: 12px; margin-bottom: 2em;">
-    <h2 style="color: #bba168;">🏆 Draft Challenge Leaderboard</h2>
-    <table id="scoreboard" style="width: 100%; border-collapse: collapse; margin-top: 1em;">
-      <thead><tr id="table-header" style="background: #333; color: #fff;"></tr></thead>
+<main>
+  <!-- 🏆 Leaderboard Section -->
+  <section class="section-box">
+    <h2>🏆 Draft Challenge Leaderboard</h2>
+    <table id="scoreboard">
+      <thead><tr id="table-header"></tr></thead>
       <tbody></tbody>
     </table>
   </section>
 
-  <!-- 📸 Media Feed Box -->
-  <section style="background: #1a1a1a; padding: 20px; border-radius: 12px; margin-bottom: 6em;">
-    <h2 style="color: #bba168;">📸 Share Your Highlights</h2>
+  <!-- 📸 Media Feed Section -->
+  <section class="section-box">
+    <h2>📸 Share Your Highlights</h2>
     <input type="hidden" role="uploadcare-uploader" data-clearable style="margin-bottom: 1em;" />
     <div id="media-container"></div>
   </section>
 </main>
 
-<!-- 🔲 Full-Width CHAT Button -->
+<!-- 💬 Full-Width Chat Toggle Button -->
 <button id="chat-toggle" style="
   position: fixed;
   bottom: 0;
@@ -53,7 +144,7 @@
   display: flex;
   flex-direction: column;
 ">
-  <h2 style="color: #bba168; margin-top: 0;">💬 Live Chat</h2>
+  <h2 style="margin-top: 0;">💬 Live Chat</h2>
   <div id="chat-box" style="flex: 1; overflow-y: auto; background: #222; padding: 10px; border-radius: 8px;"></div>
   <div id="typing-status" style="font-style: italic; color: #bba168; height: 1.2em; margin-top: 6px;"></div>
   <form id="chat-form" style="margin-top: 10px;">
@@ -106,7 +197,7 @@
     chatToggle.style.display = "block";
   };
 
-  // 💬 Live Chat Logic
+  // 💬 Chat Logic
   const chatBox = document.getElementById("chat-box");
   const chatForm = document.getElementById("chat-form");
   const chatName = document.getElementById("chat-name");
@@ -180,6 +271,85 @@
     push(messagesRef, { name, text });
     chatMessage.value = "";
     remove(ref(db, `typing/${name}`));
+  });
+</script>
+<script type="module">
+  const mediaRef = ref(db, "media");
+  const mediaContainer = document.getElementById("media-container");
+  const reactionsCache = {};
+
+  function renderMediaCard(url, key) {
+    const isVideo = /\.(mp4|webm|ogg)$/i.test(url);
+    const bubble = document.createElement("div");
+    bubble.className = "bubble";
+
+    const media = document.createElement(isVideo ? "video" : "img");
+    media.src = url;
+    media.style.cursor = "pointer";
+    if (isVideo) media.controls = true;
+
+    media.onclick = () => {
+      const overlay = document.createElement("div");
+      overlay.style = "position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.9);display:flex;align-items:center;justify-content:center;z-index:1000;";
+      const full = document.createElement(isVideo ? "video" : "img");
+      full.src = url;
+      if (isVideo) {
+        full.controls = true;
+        full.style.maxHeight = "80vh";
+      } else {
+        full.style.maxWidth = "90vw";
+        full.style.maxHeight = "90vh";
+      }
+      overlay.onclick = () => document.body.removeChild(overlay);
+      overlay.appendChild(full);
+      document.body.appendChild(overlay);
+    };
+
+    const reactionRow = document.createElement("div");
+    reactionRow.className = "reaction-circle";
+    const emojis = ["😂","🔥","👏","💯","😮","😢","👍"];
+    emojis.forEach(emoji => {
+      const span = document.createElement("span");
+      span.textContent = `${emoji} 0`;
+      span.onclick = () => {
+        const reactRef = ref(db, `mediaReactions/${key}/${emoji}`);
+        set(reactRef, (reactionsCache[key]?.[emoji] || 0) + 1);
+      };
+      reactionRow.appendChild(span);
+    });
+
+    bubble.appendChild(media);
+    bubble.appendChild(reactionRow);
+    mediaContainer.prepend(bubble);
+
+    const reactRef = ref(db, `mediaReactions/${key}`);
+    onValue(reactRef, (snap) => {
+      const data = snap.val() || {};
+      reactionsCache[key] = data;
+      reactionRow.innerHTML = "";
+      emojis.forEach(emoji => {
+        const count = data[emoji] || 0;
+        const span = document.createElement("span");
+        span.textContent = `${emoji} ${count}`;
+        span.onclick = () => {
+          update(reactRef, { [emoji]: count + 1 });
+        };
+        reactionRow.appendChild(span);
+      });
+    });
+  }
+
+  function loadMediaFeed() {
+    onChildAdded(mediaRef, (snap) => {
+      const url = snap.val();
+      const key = snap.key;
+      if (url) renderMediaCard(url, key);
+    });
+  }
+
+  uploadcare.Widget('[role=uploadcare-uploader]').onUploadComplete(function(info) {
+    const url = info.cdnUrl;
+    push(mediaRef, url);
   });
 </script>
 <script type="module">
