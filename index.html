@@ -1,9 +1,6 @@
-<!DOCTYPE html>
-<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <title>Draft Challenge Leaderboard</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@700&display=swap" rel="stylesheet" />
   <style>
     body {
@@ -35,9 +32,41 @@
       max-width: 1000px;
       margin: 0 auto;
     }
+    #chat-box {
+      height: 300px;
+      overflow-y: auto;
+      border: 1px solid #555;
+      padding: 1em;
+      background: #111;
+      margin-bottom: 1em;
+    }
+    #chat-box p {
+      background: #1a1a1a;
+      border-radius: 12px;
+      padding: 0.5em 1em;
+      margin: 6px 0;
+      max-width: 80%;
+    }
+    #typing-status {
+      font-style: italic;
+      color: #bba168;
+      height: 1.5em;
+    }
+    #chat-form input,
+    #chat-form button {
+      padding: 10px;
+      border: none;
+      border-radius: 4px;
+    }
+    #chat-form button {
+      background-color: #1a1a1a;
+      color: #bba168;
+      border: 1px solid #bba168;
+      cursor: pointer;
+    }
     table {
       width: 100%;
-      margin-bottom: 3em;
+      margin-top: 2em;
       border: 1px solid #333;
       border-collapse: collapse;
     }
@@ -57,44 +86,6 @@
       margin-left: 6px;
       font-size: 1em;
     }
-
-    /* Chat */
-    #chat-room {
-      margin-top: 2em;
-    }
-    #chat-box {
-      height: 300px;
-      overflow-y: auto;
-      border: 1px solid #555;
-      padding: 1em;
-      background: #111;
-      margin-bottom: 1em;
-    }
-    #chat-box p {
-      background: #1a1a1a;
-      border-radius: 12px;
-      padding: 0.5em 1em;
-      margin: 6px 0;
-      max-width: 80%;
-      word-wrap: break-word;
-    }
-    #typing-status {
-      font-style: italic;
-      color: #bba168;
-      height: 1.5em;
-    }
-    #chat-form input,
-    #chat-form button {
-      padding: 10px;
-      border: none;
-      border-radius: 4px;
-    }
-    #chat-form button {
-      background-color: #1a1a1a;
-      color: #bba168;
-      border: 1px solid #bba168;
-      cursor: pointer;
-    }
   </style>
 </head>
 <body>
@@ -104,15 +95,8 @@
   </header>
 
   <main>
-    <!-- Leaderboard Table -->
-    <table id="scoreboard">
-      <thead><tr id="table-header"></tr></thead>
-      <tbody></tbody>
-    </table>
-
-    <!-- Live Chat -->
+    <!-- Chat Section -->
     <section id="chat-room">
-      <h3 style="color:#bba168;">💬 Live Chat</h3>
       <div id="chat-box"></div>
       <div id="typing-status"></div>
       <form id="chat-form">
@@ -121,39 +105,41 @@
         <button type="submit">Send</button>
       </form>
     </section>
+
+    <!-- Leaderboard Table -->
+    <table id="scoreboard">
+      <thead><tr id="table-header"></tr></thead>
+      <tbody></tbody>
+    </table>
   </main>
   <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
   import {
-    getDatabase, ref as dbRef, set, push, onValue,
-    onChildAdded, query, limitToLast, remove, update
+    getDatabase, ref, set, push, onValue,
+    onChildAdded, query, limitToLast, remove
   } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
-  import {
-    getStorage, ref as storageRef, uploadBytes, getDownloadURL
-  } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-storage.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDxWpRXF8aMg31r-t27-pONNOB2iUJXYpg",
     authDomain: "log-live-chat.firebaseapp.com",
     projectId: "log-live-chat",
-    storageBucket: "log-live-chat.appspot.com",
+    storageBucket: "log-live-chat.firebasestorage.app",
     messagingSenderId: "557426074509",
-    appId: "1:557426074509:web:520a626d100bcd6db253c4"
+    appId: "1:557426074509:web:520a626d100bcd6db253c4",
+    measurementId: "G-BGNGWCFSH8"
   };
 
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
-  const storage = getStorage(app, "gs://log-live-chat.appspot.com");
 
-  // Chat
   const chatBox = document.getElementById("chat-box");
   const chatForm = document.getElementById("chat-form");
   const chatName = document.getElementById("chat-name");
   const chatMessage = document.getElementById("chat-message");
   const typingStatus = document.getElementById("typing-status");
 
-  const messagesRef = dbRef(db, "messages");
-  const typingRef = dbRef(db, "typing");
+  const messagesRef = ref(db, "messages");
+  const typingRef = ref(db, "typing");
 
   onChildAdded(query(messagesRef, limitToLast(100)), (snap) => {
     const msg = snap.val();
@@ -166,7 +152,7 @@
   chatMessage.addEventListener("input", () => {
     const name = chatName.value.trim();
     if (!name) return;
-    const myRef = dbRef(db, `typing/${name}`);
+    const myRef = ref(db, `typing/${name}`);
     if (chatMessage.value.trim()) {
       set(myRef, name);
     } else {
@@ -190,80 +176,10 @@
     if (!name || !text) return;
     push(messagesRef, { name, text });
     chatMessage.value = "";
-    remove(dbRef(db, `typing/${name}`));
+    remove(ref(db, `typing/${name}`));
   });
 
-  // Media Upload
-  const uploaderName = document.getElementById("uploader-name");
-  const mediaFile = document.getElementById("media-file");
-  const uploadBtn = document.getElementById("upload-btn");
-  const uploadStatus = document.getElementById("upload-status");
-  const gallery = document.getElementById("media-gallery");
-  const galleryRef = dbRef(db, "gallery");
-
-  uploadBtn.addEventListener("click", async () => {
-    const name = uploaderName.value.trim();
-    const file = mediaFile.files[0];
-    if (!name || !file) {
-      alert("Please enter your name and select a file.");
-      return;
-    }
-
-    const filePath = `media/${Date.now()}_${file.name}`;
-    const fileRef = storageRef(storage, filePath);
-    uploadStatus.textContent = "Uploading...";
-
-    try {
-      await uploadBytes(fileRef, file);
-      const url = await getDownloadURL(fileRef);
-      const entry = {
-        name,
-        url,
-        type: file.type.startsWith("video") ? "video" : "image",
-        time: Date.now(),
-        likes: 0
-      };
-      await push(galleryRef, entry);
-      uploadStatus.textContent = "Uploaded successfully!";
-      mediaFile.value = "";
-    } catch (err) {
-      console.error(err);
-      uploadStatus.textContent = "Upload failed. Try again.";
-    }
-  });
-
-  onChildAdded(galleryRef, (snap) => {
-    const key = snap.key;
-    const { name, url, type, likes = 0 } = snap.val();
-
-    const card = document.createElement("div");
-    card.className = "media-card";
-
-    const media = document.createElement(type === "video" ? "video" : "img");
-    media.src = url;
-    if (type === "video") media.controls = true;
-    if (type === "image" && url.endsWith(".gif")) media.loading = "lazy";
-
-    const caption = document.createElement("div");
-    caption.textContent = `🧑 ${name}`;
-
-    const reactions = document.createElement("div");
-    reactions.className = "reaction-bar";
-
-    const likeBtn = document.createElement("button");
-    likeBtn.innerHTML = `❤️ ${likes}`;
-    likeBtn.onclick = () => {
-      update(dbRef(db, `gallery/${key}`), { likes: likes + 1 });
-      likeBtn.disabled = true;
-    };
-
-    reactions.appendChild(likeBtn);
-    card.appendChild(media);
-    card.appendChild(caption);
-    card.appendChild(reactions);
-    gallery.prepend(card);
-  });
-  // Leaderboard logic
+  // Leaderboard
   const API_URL = "https://script.google.com/macros/s/AKfycbz5nn5KBCDW-MOOjwbZEmJi4VG4fehEDdnFi1S9ZRWS_SHhpRpFMg0FFCRPYKWgKxiBzg/exec";
 
   function fetchScores() {
@@ -349,11 +265,8 @@
     });
   }
 
-  // Start leaderboard polling every 10 seconds
   document.addEventListener("DOMContentLoaded", () => {
     fetchScores();
     setInterval(fetchScores, 10000);
   });
 </script>
-</body>
-</html>
