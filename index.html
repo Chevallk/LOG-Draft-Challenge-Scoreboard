@@ -1,150 +1,167 @@
-<style>
-  body {
-    background-color: #0d0d0d;
-    color: #fff;
-    font-family: 'Roboto Condensed', sans-serif;
-    margin: 0;
-    padding-bottom: 80px;
-  }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Draft Challenge</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@700&display=swap" rel="stylesheet" />
+  <script>
+    UPLOADCARE_PUBLIC_KEY = "36aca0ff7641024739f7";
+  </script>
+  <script src="https://ucarecdn.com/libs/widget/3.x/uploadcare.full.min.js"></script>
+  <style>
+    body {
+      background-color: #0d0d0d;
+      color: #fff;
+      font-family: 'Roboto Condensed', sans-serif;
+      margin: 0;
+      padding-bottom: 80px;
+    }
 
-  header {
-    background-color: #000;
-    padding: 2em 1em 1em;
-    text-align: center;
-    border-bottom: 6px solid #bba168;
-  }
+    header {
+      background-color: #000;
+      padding: 2em 1em 1em;
+      text-align: center;
+      border-bottom: 6px solid #bba168;
+    }
 
-  header img {
-    max-height: 80px;
-    margin-bottom: 10px;
-  }
+    header img {
+      max-height: 80px;
+      margin-bottom: 10px;
+    }
 
-  header h1 {
-    margin: 0;
-    font-size: 2.4em;
-    color: #bba168;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-  }
+    header h1 {
+      margin: 0;
+      font-size: 2.4em;
+      color: #bba168;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
 
-  main {
-    padding: 2em 1em;
-    max-width: 1000px;
-    margin: 0 auto;
-  }
+    main {
+      padding: 2em 1em;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
 
-  /* 💬 Chat Bubble Styles */
-  .bubble {
-    width: 100%;
-    padding: 16px 20px;
-    border-radius: 18px;
-    margin: 12px 0;
-    word-wrap: break-word;
-    display: block;
-    background: #222;
-    color: #fff;
-    font-size: 1.2em;
-  }
+    table {
+      width: 100%;
+      margin-bottom: 2em;
+      border: 1px solid #333;
+      border-collapse: collapse;
+    }
 
-  .bubble .username {
-    font-weight: bold;
-    color: #bba168;
-    display: block;
-    margin-bottom: 6px;
-    font-size: 1em;
-  }
+    th, td {
+      padding: 10px;
+      border: 1px solid #333;
+    }
 
-  /* 🎭 Emoji Reaction Circle */
-  .reaction-circle {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 10px;
-    align-items: center;
-  }
+    th {
+      background-color: #1a1a1a;
+      color: #bba168;
+    }
 
-  .reaction-circle span {
-    background: #333;
-    border-radius: 50%;
-    padding: 8px 12px;
-    font-size: 1.2em;
-    cursor: pointer;
-    user-select: none;
-  }
+    .badge {
+      margin-left: 6px;
+      font-size: 1em;
+    }
 
-  /* 📸 Media Bubble */
-  .media-bubble {
-    background: #1a1a1a;
-    border-radius: 18px;
-    padding: 12px;
-    margin: 12px 0;
-    position: relative;
-  }
+    .crown {
+      color: #bba168;
+      font-weight: bold;
+    }
 
-  .media-bubble img,
-  .media-bubble video {
-    width: 100%;
-    border-radius: 12px;
-    max-height: 300px;
-    object-fit: cover;
-  }
+    .bubble {
+      width: 100%;
+      padding: 16px 20px;
+      border-radius: 18px;
+      margin: 12px 0;
+      word-wrap: break-word;
+      display: block;
+      background: #222;
+      color: #fff;
+      font-size: 1.2em;
+    }
 
-  .media-bubble .reaction-circle {
-    margin-top: 10px;
-  }
+    .bubble .username {
+      font-weight: bold;
+      color: #bba168;
+      display: block;
+      margin-bottom: 6px;
+      font-size: 1em;
+    }
 
-  /* 📱 Chat Input */
-  #chat-box {
-    padding: 10px;
-    overflow-y: auto;
-    max-height: 60vh;
-  }
+    .reaction-circle {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+      align-items: center;
+    }
 
-  #chat-form {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding: 10px 0;
-  }
+    .reaction-circle span {
+      background: #333;
+      border-radius: 50%;
+      padding: 8px 12px;
+      font-size: 1.2em;
+      cursor: pointer;
+      user-select: none;
+    }
 
-  #chat-form input,
-  #chat-form textarea {
-    padding: 12px;
-    font-size: 1.1em;
-    width: 100%;
-    border-radius: 6px;
-    border: none;
-  }
+    .media-bubble {
+      background: #1a1a1a;
+      border-radius: 18px;
+      padding: 12px;
+      margin: 12px 0;
+      position: relative;
+    }
 
-  #chat-form button {
-    background: #bba168;
-    color: #000;
-    font-size: 1.2em;
-    padding: 12px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-  }
-</style>
-<!-- 📸 Media Upload Feed -->
-<section class="media-feed">
-  <h2>📸 Share Your Highlights</h2>
-  <input type="hidden" role="uploadcare-uploader" data-clearable style="margin-bottom: 1em;" />
-  <div id="media-container"></div>
-</section>
+    .media-bubble img,
+    .media-bubble video {
+      width: 100%;
+      border-radius: 12px;
+      max-height: 300px;
+      object-fit: cover;
+    }
 
-<!-- 💬 Floating Chat -->
-<section id="chat-room">
-  <h2 style="margin-top: 0;">💬 Live Chat</h2>
-  <div id="chat-box"></div>
-  <div id="typing-status" style="font-style: italic; color: #bba168; height: 1.2em;"></div>
-  <form id="chat-form">
-    <input id="chat-name" placeholder="Your name" required />
-    <textarea id="chat-message" placeholder="Message..." required rows="3"></textarea>
-    <button type="submit">Send</button>
-  </form>
-</section>
-<main>
+    #chat-box {
+      padding: 10px;
+      overflow-y: auto;
+      max-height: 60vh;
+    }
+
+    #chat-form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 10px 0;
+    }
+
+    #chat-form input,
+    #chat-form textarea {
+      padding: 12px;
+      font-size: 1.1em;
+      width: 100%;
+      border-radius: 6px;
+      border: none;
+    }
+
+    #chat-form button {
+      background: #bba168;
+      color: #000;
+      font-size: 1.2em;
+      padding: 12px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="https://i.postimg.cc/RZcQfc7N/LOG-Transparent-Logo.png" alt="Challenge Logo" />
+    <h1>Draft Challenge</h1>
+  </header>
+  <main>
   <!-- 🏆 SCOREBOARD -->
   <section class="leaderboard">
     <h2>🏆 Draft Challenge Leaderboard</h2>
@@ -458,6 +475,7 @@
 
   document.addEventListener("DOMContentLoaded", () => {
     fetchScores();
+    setInterval(fetchScores, 10000);
     loadMediaFeed();
   });
 </script>
