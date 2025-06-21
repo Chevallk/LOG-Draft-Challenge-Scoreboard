@@ -3,7 +3,7 @@
   <h1 style="text-align: center; color: #bba168; font-family: 'Roboto Condensed', sans-serif;">Draft Challenge</h1>
 </header>
 
-<main style="max-width: 1000px; margin: 0 auto; padding: 2em 1em; font-family: 'Roboto Condensed', sans-serif;">
+<main style="max-width: 1000px; margin: 0 auto; padding: 2em 1em;">
   <!-- 🏆 Leaderboard Box -->
   <section style="background: #1a1a1a; padding: 20px; border-radius: 12px; margin-bottom: 2em;">
     <h2 style="color: #bba168;">🏆 Draft Challenge Leaderboard</h2>
@@ -29,13 +29,14 @@
   width: 100%;
   background: #bba168;
   color: #000;
-  font-size: 1.2em;
-  padding: 20px;
+  font-size: 1.4em;
+  padding: 18px 0;
   border: none;
   border-top: 3px solid #fff;
   cursor: pointer;
   z-index: 9999;
-">CHAT</button>
+  font-weight: bold;
+">💬 Open Chat</button>
 
 <!-- 💬 Fullscreen Chat Panel -->
 <div id="floating-chat" style="
@@ -71,7 +72,26 @@
   ">Close Chat</button>
 </div>
 <script type="module">
-  // 🔄 Chat Toggle Logic
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+  import {
+    getDatabase, ref, set, push, onValue,
+    onChildAdded, query, limitToLast, remove, update
+  } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+
+  // 🔥 Firebase Config
+  const firebaseConfig = {
+    apiKey: "AIzaSyDxWpRXF8aMg31r-t27-pONNOB2iUJXYpg",
+    authDomain: "log-live-chat.firebaseapp.com",
+    projectId: "log-live-chat",
+    storageBucket: "log-live-chat.appspot.com",
+    messagingSenderId: "557426074509",
+    appId: "1:557426074509:web:520a626d100bcd6db253c4"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  // 🟨 Chat Toggle Logic
   const chatToggle = document.getElementById("chat-toggle");
   const floatingChat = document.getElementById("floating-chat");
   const closeChat = document.getElementById("close-chat");
@@ -86,37 +106,22 @@
     chatToggle.style.display = "block";
   };
 
-  // 📸 Media Feed Rendering
-  const mediaRef = ref(db, "media");
-  const mediaContainer = document.getElementById("media-container");
-  const reactionsCache = {};
+  // 💬 Live Chat Logic
+  const chatBox = document.getElementById("chat-box");
+  const chatForm = document.getElementById("chat-form");
+  const chatName = document.getElementById("chat-name");
+  const chatMessage = document.getElementById("chat-message");
+  const typingStatus = document.getElementById("typing-status");
+  const messagesRef = ref(db, "messages");
+  const typingRef = ref(db, "typing");
 
-  function renderMediaCard(url, key) {
-    const isVideo = /\.(mp4|webm|ogg)$/i.test(url);
+  onChildAdded(query(messagesRef, limitToLast(100)), (snap) => {
+    const msg = snap.val();
+    const msgKey = snap.key;
+
     const bubble = document.createElement("div");
     bubble.className = "bubble";
-
-    const media = document.createElement(isVideo ? "video" : "img");
-    media.src = url;
-    media.style.cursor = "pointer";
-    if (isVideo) media.controls = true;
-
-    media.onclick = () => {
-      const overlay = document.createElement("div");
-      overlay.style = "position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.9);display:flex;align-items:center;justify-content:center;z-index:1000;";
-      const full = document.createElement(isVideo ? "video" : "img");
-      full.src = url;
-      if (isVideo) {
-        full.controls = true;
-        full.style.maxHeight = "80vh";
-      } else {
-        full.style.maxWidth = "90vw";
-        full.style.maxHeight = "90vh";
-      }
-      overlay.onclick = () => document.body.removeChild(overlay);
-      overlay.appendChild(full);
-      document.body.appendChild(overlay);
-    };
+    bubble.innerHTML = `<span class="username">${msg.name}</span>${msg.text}`;
 
     const reactionRow = document.createElement("div");
     reactionRow.className = "reaction-circle";
@@ -125,20 +130,19 @@
       const span = document.createElement("span");
       span.textContent = `${emoji} 0`;
       span.onclick = () => {
-        const reactRef = ref(db, `mediaReactions/${key}/${emoji}`);
-        set(reactRef, (reactionsCache[key]?.[emoji] || 0) + 1);
+        const reactRef = ref(db, `reactions/${msgKey}/${emoji}`);
+        set(reactRef, (msg.reactions?.[emoji] || 0) + 1);
       };
       reactionRow.appendChild(span);
     });
 
-    bubble.appendChild(media);
     bubble.appendChild(reactionRow);
-    mediaContainer.prepend(bubble);
+    chatBox.appendChild(bubble);
+    chatBox.scrollTop = chatBox.scrollHeight;
 
-    const reactRef = ref(db, `mediaReactions/${key}`);
+    const reactRef = ref(db, `reactions/${msgKey}`);
     onValue(reactRef, (snap) => {
       const data = snap.val() || {};
-      reactionsCache[key] = data;
       reactionRow.innerHTML = "";
       emojis.forEach(emoji => {
         const count = data[emoji] || 0;
@@ -150,19 +154,32 @@
         reactionRow.appendChild(span);
       });
     });
-  }
+  });
 
-  function loadMediaFeed() {
-    onChildAdded(mediaRef, (snap) => {
-      const url = snap.val();
-      const key = snap.key;
-      if (url) renderMediaCard(url, key);
-    });
-  }
+  chatMessage.addEventListener("input", () => {
+    const name = chatName.value.trim();
+    if (!name) return;
+    const myRef = ref(db, `typing/${name}`);
+    chatMessage.value.trim() ? set(myRef, name) : remove(myRef);
+  });
 
-  uploadcare.Widget('[role=uploadcare-uploader]').onUploadComplete(function(info) {
-    const url = info.cdnUrl;
-    push(mediaRef, url);
+  onValue(typingRef, (snap) => {
+    const val = snap.val() || {};
+    const current = chatName.value.trim();
+    const others = Object.values(val).filter(n => n !== current);
+    typingStatus.textContent = others.length
+      ? `${others.join(", ")} ${others.length === 1 ? "is" : "are"} typing...`
+      : "";
+  });
+
+  chatForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const name = chatName.value.trim();
+    const text = chatMessage.value.trim();
+    if (!name || !text) return;
+    push(messagesRef, { name, text });
+    chatMessage.value = "";
+    remove(ref(db, `typing/${name}`));
   });
 </script>
 <script type="module">
