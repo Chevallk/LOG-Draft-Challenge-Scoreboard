@@ -1,293 +1,71 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Draft Challenge</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@700&display=swap" rel="stylesheet" />
-  <script>
-    UPLOADCARE_PUBLIC_KEY = "36aca0ff7641024739f7";
-  </script>
-  <script src="https://ucarecdn.com/libs/widget/3.x/uploadcare.full.min.js"></script>
-  <style>
-    body {
-      background-color: #0d0d0d;
-      color: #fff;
-      font-family: 'Roboto Condensed', sans-serif;
-      margin: 0;
-      padding-bottom: 80px;
-    }
+<!-- 🟨 Floating Chat Toggle Button -->
+<button id="chat-toggle" style="
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #bba168;
+  color: #000;
+  font-size: 1.2em;
+  padding: 14px 24px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  z-index: 9999;
+">CHAT</button>
 
-    header {
-      background-color: #000;
-      padding: 2em 1em 1em;
-      text-align: center;
-      border-bottom: 6px solid #bba168;
-    }
+<!-- 💬 Floating Chat Panel -->
+<div id="floating-chat" style="
+  display: none;
+  position: fixed;
+  bottom: 80px;
+  right: 20px;
+  width: 320px;
+  max-height: 80vh;
+  background: #111;
+  border: 2px solid #bba168;
+  border-radius: 12px;
+  padding: 16px;
+  z-index: 9998;
+  box-shadow: 0 0 12px rgba(0,0,0,0.6);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+">
+  <h3 style="margin-top: 0; color: #bba168;">💬 Live Chat</h3>
+  <div id="chat-box" style="flex: 1; overflow-y: auto; margin-bottom: 10px;"></div>
+  <div id="typing-status" style="font-style: italic; color: #bba168; height: 1.2em;"></div>
+  <form id="chat-form">
+    <input id="chat-name" placeholder="Your name" required />
+    <textarea id="chat-message" placeholder="Message..." required rows="3"></textarea>
+    <button type="submit">Send</button>
+  </form>
+  <button id="close-chat" style="
+    margin-top: 10px;
+    background: #333;
+    color: #fff;
+    border: none;
+    padding: 10px;
+    border-radius: 6px;
+    cursor: pointer;
+  ">Close Chat</button>
+</div>
+<script type="module">
+  // 🟨 Floating Chat Toggle Logic
+  const chatToggle = document.getElementById("chat-toggle");
+  const floatingChat = document.getElementById("floating-chat");
+  const closeChat = document.getElementById("close-chat");
 
-    header img {
-      max-height: 80px;
-      margin-bottom: 10px;
-    }
-
-    header h1 {
-      margin: 0;
-      font-size: 2.4em;
-      color: #bba168;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-    }
-
-    main {
-      padding: 2em 1em;
-      max-width: 1000px;
-      margin: 0 auto;
-    }
-
-    table {
-      width: 100%;
-      margin-bottom: 2em;
-      border: 1px solid #333;
-      border-collapse: collapse;
-    }
-
-    th, td {
-      padding: 10px;
-      border: 1px solid #333;
-    }
-
-    th {
-      background-color: #1a1a1a;
-      color: #bba168;
-    }
-
-    .badge {
-      margin-left: 6px;
-      font-size: 1em;
-    }
-
-    .crown {
-      color: #bba168;
-      font-weight: bold;
-    }
-
-    .bubble {
-      width: 100%;
-      padding: 16px 20px;
-      border-radius: 18px;
-      margin: 12px 0;
-      word-wrap: break-word;
-      display: block;
-      background: #222;
-      color: #fff;
-      font-size: 1.2em;
-    }
-
-    .bubble .username {
-      font-weight: bold;
-      color: #bba168;
-      display: block;
-      margin-bottom: 6px;
-      font-size: 1em;
-    }
-
-    .reaction-circle {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 10px;
-      align-items: center;
-    }
-
-    .reaction-circle span {
-      background: #333;
-      border-radius: 50%;
-      padding: 8px 12px;
-      font-size: 1.2em;
-      cursor: pointer;
-      user-select: none;
-    }
-
-    .media-bubble {
-      background: #1a1a1a;
-      border-radius: 18px;
-      padding: 12px;
-      margin: 12px 0;
-      position: relative;
-    }
-
-    .media-bubble img,
-    .media-bubble video {
-      width: 100%;
-      border-radius: 12px;
-      max-height: 300px;
-      object-fit: cover;
-    }
-
-    #chat-box {
-      padding: 10px;
-      overflow-y: auto;
-      max-height: 60vh;
-    }
-
-    #chat-form {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      padding: 10px 0;
-    }
-
-    #chat-form input,
-    #chat-form textarea {
-      padding: 12px;
-      font-size: 1.1em;
-      width: 100%;
-      border-radius: 6px;
-      border: none;
-    }
-
-    #chat-form button {
-      background: #bba168;
-      color: #000;
-      font-size: 1.2em;
-      padding: 12px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-  </style>
-</head>
-<body>
-  <header>
-    <img src="https://i.postimg.cc/RZcQfc7N/LOG-Transparent-Logo.png" alt="Challenge Logo" />
-    <h1>Draft Challenge</h1>
-  </header>
-  <main>
-    <!-- 🏆 SCOREBOARD -->
-    <section class="leaderboard">
-      <h2>🏆 Draft Challenge Leaderboard</h2>
-      <table id="scoreboard">
-        <thead><tr id="table-header"></tr></thead>
-        <tbody></tbody>
-      </table>
-    </section>
-
-    <!-- 📸 MEDIA UPLOAD FEED -->
-    <section class="media-feed">
-      <h2>📸 Share Your Highlights</h2>
-      <input type="hidden" role="uploadcare-uploader" data-clearable style="margin-bottom: 1em;" />
-      <div id="media-container"></div>
-    </section>
-
-    <!-- 💬 LIVE CHAT -->
-    <section id="chat-room">
-      <h2 style="margin-top: 0;">💬 Live Chat</h2>
-      <div id="chat-box"></div>
-      <div id="typing-status" style="font-style: italic; color: #bba168; height: 1.2em;"></div>
-      <form id="chat-form">
-        <input id="chat-name" placeholder="Your name" required />
-        <textarea id="chat-message" placeholder="Message..." required rows="3"></textarea>
-        <button type="submit">Send</button>
-      </form>
-    </section>
-  </main>
-  <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-  import {
-    getDatabase, ref, set, push, onValue,
-    onChildAdded, query, limitToLast, remove, update
-  } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyDxWpRXF8aMg31r-t27-pONNOB2iUJXYpg",
-    authDomain: "log-live-chat.firebaseapp.com",
-    projectId: "log-live-chat",
-    storageBucket: "log-live-chat.appspot.com",
-    messagingSenderId: "557426074509",
-    appId: "1:557426074509:web:520a626d100bcd6db253c4"
+  chatToggle.onclick = () => {
+    floatingChat.style.display = "flex";
+    chatToggle.style.display = "none";
   };
 
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
+  closeChat.onclick = () => {
+    floatingChat.style.display = "none";
+    chatToggle.style.display = "block";
+  };
 
-  // 🔥 Live Chat Logic
-  const chatBox = document.getElementById("chat-box");
-  const chatForm = document.getElementById("chat-form");
-  const chatName = document.getElementById("chat-name");
-  const chatMessage = document.getElementById("chat-message");
-  const typingStatus = document.getElementById("typing-status");
-  const messagesRef = ref(db, "messages");
-  const typingRef = ref(db, "typing");
-
-  onChildAdded(query(messagesRef, limitToLast(100)), (snap) => {
-    const msg = snap.val();
-    const msgKey = snap.key;
-
-    const bubble = document.createElement("div");
-    bubble.className = "bubble";
-    bubble.innerHTML = `<span class="username">${msg.name}</span>${msg.text}`;
-
-    const reactionRow = document.createElement("div");
-    reactionRow.className = "reaction-circle";
-    const emojis = ["😂","🔥","👏","💯","😮","😢","👍"];
-    emojis.forEach(emoji => {
-      const span = document.createElement("span");
-      span.textContent = `${emoji} 0`;
-      span.onclick = () => {
-        const reactRef = ref(db, `reactions/${msgKey}/${emoji}`);
-        set(reactRef, (msg.reactions?.[emoji] || 0) + 1);
-      };
-      reactionRow.appendChild(span);
-    });
-
-    bubble.appendChild(reactionRow);
-    chatBox.appendChild(bubble);
-    chatBox.scrollTop = chatBox.scrollHeight;
-
-    const reactRef = ref(db, `reactions/${msgKey}`);
-    onValue(reactRef, (snap) => {
-      const data = snap.val() || {};
-      reactionRow.innerHTML = "";
-      emojis.forEach(emoji => {
-        const count = data[emoji] || 0;
-        const span = document.createElement("span");
-        span.textContent = `${emoji} ${count}`;
-        span.onclick = () => {
-          update(reactRef, { [emoji]: count + 1 });
-        };
-        reactionRow.appendChild(span);
-      });
-    });
-  });
-
-  // ✍️ Typing Status
-  chatMessage.addEventListener("input", () => {
-    const name = chatName.value.trim();
-    if (!name) return;
-    const myRef = ref(db, `typing/${name}`);
-    chatMessage.value.trim() ? set(myRef, name) : remove(myRef);
-  });
-
-  onValue(typingRef, (snap) => {
-    const val = snap.val() || {};
-    const current = chatName.value.trim();
-    const others = Object.values(val).filter(n => n !== current);
-    typingStatus.textContent = others.length
-      ? `${others.join(", ")} ${others.length === 1 ? "is" : "are"} typing...`
-      : "";
-  });
-
-  chatForm.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const name = chatName.value.trim();
-    const text = chatMessage.value.trim();
-    if (!name || !text) return;
-    push(messagesRef, { name, text });
-    chatMessage.value = "";
-    remove(ref(db, `typing/${name}`));
-  });
-
-  // 📸 Media Upload Handling
+  // 📸 Media Feed Rendering Fix
   const mediaRef = ref(db, "media");
   const mediaContainer = document.getElementById("media-container");
   const reactionsCache = {};
@@ -295,7 +73,7 @@
   function renderMediaCard(url, key) {
     const isVideo = /\.(mp4|webm|ogg)$/i.test(url);
     const bubble = document.createElement("div");
-    bubble.className = "media-bubble";
+    bubble.className = "bubble";
 
     const media = document.createElement(isVideo ? "video" : "img");
     media.src = url;
