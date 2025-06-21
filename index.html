@@ -81,6 +81,15 @@
       cursor: pointer;
       margin-left: 6px;
     }
+    .emoji-menu {
+      display: flex;
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .emoji-menu span {
+      cursor: pointer;
+      font-size: 1.2em;
+    }
 
     /* 📱 Full-width Chat Toggle Bar */
     #chat-toggle {
@@ -131,12 +140,6 @@
     <h1>Draft Challenge Leaderboard</h1>
   </header>
   <main>
-
-    <!-- 🏆 Leaderboard Table -->
-    <table id="scoreboard">
-      <thead><tr id="table-header"></tr></thead>
-      <tbody></tbody>
-    </table>
         <!-- 📸 Media Upload Feed -->
     <section class="media-feed">
       <h2>📸 Share Your Highlights</h2>
@@ -177,6 +180,15 @@
         font-size: 1.2em;
         cursor: pointer;
         margin-left: 6px;
+      }
+      .media-bubble .emoji-menu {
+        display: flex;
+        gap: 6px;
+        margin-top: 4px;
+      }
+      .media-bubble .emoji-menu span {
+        cursor: pointer;
+        font-size: 1.2em;
       }
     </style>
   </main>
@@ -240,19 +252,30 @@
       reactionTag.className = "reaction-tag";
       reactionTag.textContent = "";
 
+      const emojiMenu = document.createElement("div");
+      emojiMenu.className = "emoji-menu";
+      emojiMenu.style.display = "none";
+
+      ["😂","🔥","👏","💯","😮","😢","👍"].forEach(emoji => {
+        const span = document.createElement("span");
+        span.textContent = emoji;
+        span.onclick = () => {
+          reactionTag.textContent = emoji;
+          emojiMenu.style.display = "none";
+        };
+        emojiMenu.appendChild(span);
+      });
+
       const picker = document.createElement("button");
       picker.className = "reaction-picker";
-      picker.textContent = "➕";
+      picker.textContent = "😊";
       picker.onclick = () => {
-        const emojis = ["😂","🔥","👏","💯","😮","😢","👍"];
-        const choice = prompt("React with:", emojis.join(" "));
-        if (emojis.includes(choice)) {
-          reactionTag.textContent = choice;
-        }
+        emojiMenu.style.display = emojiMenu.style.display === "none" ? "flex" : "none";
       };
 
       bubble.appendChild(reactionTag);
       bubble.appendChild(picker);
+      bubble.appendChild(emojiMenu);
       chatBox.appendChild(wrapper);
       chatBox.scrollTop = chatBox.scrollHeight;
 
@@ -290,7 +313,7 @@
       chatMessage.value = "";
       remove(ref(db, `typing/${name}`));
     });
-          // 📸 Uploadcare + Firebase Media Feed
+    // 📸 Uploadcare + Firebase Media Feed
     const mediaRef = ref(db, "media");
 
     function renderMediaCard(url) {
@@ -342,21 +365,32 @@
       reactionTag.className = "reaction-tag";
       reactionTag.textContent = "";
 
+      const emojiMenu = document.createElement("div");
+      emojiMenu.className = "emoji-menu";
+      emojiMenu.style.display = "none";
+
+      ["😂","🔥","👏","💯","😮","😢","👍"].forEach(emoji => {
+        const span = document.createElement("span");
+        span.textContent = emoji;
+        span.onclick = () => {
+          reactionTag.textContent = emoji;
+          emojiMenu.style.display = "none";
+        };
+        emojiMenu.appendChild(span);
+      });
+
       const picker = document.createElement("button");
       picker.className = "reaction-picker";
-      picker.textContent = "➕";
+      picker.textContent = "😊";
       picker.onclick = () => {
-        const emojis = ["😂","🔥","👏","💯","😮","😢","👍"];
-        const choice = prompt("React with:", emojis.join(" "));
-        if (emojis.includes(choice)) {
-          reactionTag.textContent = choice;
-        }
+        emojiMenu.style.display = emojiMenu.style.display === "none" ? "flex" : "none";
       };
 
       const actions = document.createElement("div");
       actions.className = "actions";
       actions.appendChild(reactionTag);
       actions.appendChild(picker);
+      actions.appendChild(emojiMenu);
 
       const downloadLink = document.createElement("a");
       downloadLink.href = url;
@@ -384,4 +418,3 @@
   </script>
 </body>
 </html>
-    
