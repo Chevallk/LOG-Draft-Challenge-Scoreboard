@@ -50,11 +50,15 @@
     }
 
     .bubble {
-      background: #222;
+      background: #2a2a2a;
       padding: 16px;
-      border-radius: 12px;
+      border-radius: 20px;
       margin: 12px 0;
-      font-size: 1.1em;
+      font-size: 1em;
+      max-width: 80%;
+      position: relative;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      transition: transform 0.2s ease;
     }
 
     .reaction-circle {
@@ -100,6 +104,25 @@
     .badge {
       margin-left: 6px;
       font-size: 1em;
+    }
+
+    .emoji-picker {
+      position: absolute;
+      background: #111;
+      border: 1px solid #555;
+      padding: 8px;
+      border-radius: 8px;
+      z-index: 1000;
+      display: flex;
+      gap: 8px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .emoji-picker.show {
+      opacity: 1;
+      pointer-events: auto;
     }
 
     @media (max-width: 600px) {
@@ -174,7 +197,7 @@
     media.src = url;
     media.style.cursor = "pointer";
     media.style.maxWidth = "100%";
-    media.style.borderRadius = "8px";
+    media.style.borderRadius = "12px";
     if (isVideo) media.controls = true;
 
     media.onclick = () => {
@@ -205,29 +228,27 @@
     emojiBtn.textContent = "➕ React";
     emojiBtn.style = "margin-left: 10px; padding: 6px 12px; background: #555; color: #fff; border: none; border-radius: 6px; cursor: pointer;";
     emojiBtn.onclick = () => {
-      const emoji = prompt("Pick an emoji to react:");
-      if (emoji) {
-        const tag = document.createElement("div");
-        tag.textContent = emoji;
-        tag.className = "bubble";
-        tag.style.background = "#333";
-        tag.style.fontSize = "1.5em";
-        bubble.appendChild(tag);
-      }
+      const picker = document.createElement("div");
+      picker.className = "emoji-picker";
+      const emojis = ["😂", "🔥", "👏", "💯", "😮", "😢", "👍"];
+      emojis.forEach(emoji => {
+        const span = document.createElement("span");
+        span.textContent = emoji;
+        span.style = "cursor: pointer; font-size: 1.5em;";
+        span.onclick = () => {
+          const reactRef = ref(db, `mediaReactions/${key}/${emoji}`);
+          set(reactRef, (reactionsCache[key]?.[emoji] || 0) + 1);
+          picker.remove();
+        };
+        picker.appendChild(span);
+      });
+      picker.classList.add("show");
+      bubble.appendChild(picker);
+      setTimeout(() => picker.classList.remove("show"), 3000);
     };
 
     const reactionRow = document.createElement("div");
     reactionRow.className = "reaction-circle";
-    const emojis = ["😂","🔥","👏","💯","😮","😢","👍"];
-    emojis.forEach(emoji => {
-      const span = document.createElement("span");
-      span.textContent = `${emoji} 0`;
-      span.onclick = () => {
-        const reactRef = ref(db, `mediaReactions/${key}/${emoji}`);
-        set(reactRef, (reactionsCache[key]?.[emoji] || 0) + 1);
-      };
-      reactionRow.appendChild(span);
-    });
 
     bubble.appendChild(media);
     bubble.appendChild(downloadBtn);
@@ -240,8 +261,7 @@
       const data = snap.val() || {};
       reactionsCache[key] = data;
       reactionRow.innerHTML = "";
-      emojis.forEach(emoji => {
-        const count = data[emoji] || 0;
+      Object.entries(data).forEach(([emoji, count]) => {
         const span = document.createElement("span");
         span.textContent = `${emoji} ${count}`;
         span.onclick = () => {
