@@ -30,18 +30,22 @@
       border-radius: 12px;
       margin: 2em auto;
       max-width: 1000px;
+      overflow-x: auto;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 1em;
+      table-layout: fixed;
     }
 
     th, td {
       padding: 12px;
       font-size: 1.1em;
       border: 1px solid #333;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
     }
 
     th {
@@ -58,7 +62,6 @@
       max-width: 95%;
       position: relative;
       box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-      transition: transform 0.2s ease;
       word-wrap: break-word;
     }
 
@@ -178,10 +181,12 @@
     <!-- 🏆 Leaderboard Section -->
     <section class="section-box">
       <h2>🏆 Draft Challenge Leaderboard</h2>
-      <table id="scoreboard">
-        <thead><tr id="table-header"></tr></thead>
-        <tbody></tbody>
-      </table>
+      <div style="overflow-x: auto;">
+        <table id="scoreboard">
+          <thead><tr id="table-header"></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </section>
 
     <!-- 📸 Share Your Highlights Section -->
@@ -394,4 +399,3 @@
 </script>
 </body>
 </html>
-  
