@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>Draft Challenge</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@700&display=swap" rel="stylesheet" />
   <script>
     UPLOADCARE_PUBLIC_KEY = "36aca0ff7641024739f7";
@@ -53,12 +53,13 @@
       background: #2a2a2a;
       padding: 16px;
       border-radius: 20px;
-      margin: 12px 0;
+      margin: 12px auto;
       font-size: 1em;
-      max-width: 80%;
+      max-width: 95%;
       position: relative;
       box-shadow: 0 2px 5px rgba(0,0,0,0.2);
       transition: transform 0.2s ease;
+      word-wrap: break-word;
     }
 
     .reaction-circle {
@@ -66,6 +67,7 @@
       flex-wrap: wrap;
       gap: 10px;
       margin-top: 10px;
+      justify-content: center;
     }
 
     .reaction-circle span {
@@ -75,6 +77,15 @@
       font-size: 1.2em;
       cursor: pointer;
       user-select: none;
+    }
+
+    button {
+      font-size: 1em;
+      padding: 12px 16px;
+      margin: 6px 4px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
     }
 
     .media-expand-overlay {
@@ -96,6 +107,28 @@
       max-height: 90vh;
     }
 
+    .emoji-picker {
+      position: absolute;
+      background: #111;
+      border: 1px solid #555;
+      padding: 8px;
+      border-radius: 8px;
+      z-index: 1000;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      max-width: 90vw;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      bottom: -60px;
+    }
+
+    .emoji-picker.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
     .crown {
       color: #bba168;
       font-weight: bold;
@@ -106,43 +139,37 @@
       font-size: 1em;
     }
 
-    .emoji-picker {
-      position: absolute;
-      background: #111;
-      border: 1px solid #555;
-      padding: 8px;
-      border-radius: 8px;
-      z-index: 1000;
-      display: flex;
-      gap: 8px;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.2s ease;
-    }
-
-    .emoji-picker.show {
-      opacity: 1;
-      pointer-events: auto;
+    #media-container {
+      padding: 0 10px;
     }
 
     @media (max-width: 600px) {
       h1, h2 {
         font-size: 1.4em;
       }
+
       th, td {
         font-size: 0.95em;
         padding: 8px;
       }
+
       .reaction-circle span {
         font-size: 1em;
         padding: 6px 10px;
+      }
+
+      button {
+        font-size: 1em;
+        width: 100%;
+        margin-top: 8px;
       }
     }
   </style>
 </head>
 <body>
   <header>
-    <img src="https://i.postimg.cc/RZcQfc7N/LOG-Transparent-Logo.png" alt="Challenge Logo"
+    <img src="https://i.postimg.cc/RZcQfc7N/LOG-Transparent-Logo.png"
+         alt="Challenge Logo"
          style="max-height: 80px; margin: 20px auto; display: block;" />
     <h1>Draft Challenge</h1>
   </header>
@@ -216,7 +243,6 @@
 
     const downloadBtn = document.createElement("button");
     downloadBtn.textContent = "⬇️ Download";
-    downloadBtn.style = "margin-top: 10px; padding: 6px 12px; background: #333; color: #fff; border: none; border-radius: 6px; cursor: pointer;";
     downloadBtn.onclick = () => {
       const link = document.createElement("a");
       link.href = url;
@@ -226,10 +252,9 @@
 
     const emojiBtn = document.createElement("button");
     emojiBtn.textContent = "➕ React";
-    emojiBtn.style = "margin-left: 10px; padding: 6px 12px; background: #555; color: #fff; border: none; border-radius: 6px; cursor: pointer;";
     emojiBtn.onclick = () => {
       const picker = document.createElement("div");
-      picker.className = "emoji-picker";
+      picker.className = "emoji-picker show";
       const emojis = ["😂", "🔥", "👏", "💯", "😮", "😢", "👍"];
       emojis.forEach(emoji => {
         const span = document.createElement("span");
@@ -242,9 +267,8 @@
         };
         picker.appendChild(span);
       });
-      picker.classList.add("show");
       bubble.appendChild(picker);
-      setTimeout(() => picker.classList.remove("show"), 3000);
+      setTimeout(() => picker.remove(), 3000);
     };
 
     const reactionRow = document.createElement("div");
@@ -370,3 +394,4 @@
 </script>
 </body>
 </html>
+  
