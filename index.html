@@ -327,70 +327,71 @@
   }
 
   function updateTable(data) {
-    const [headers, ...rows] = data;
-    const tableHeader = document.getElementById("table-header");
-    const tableBody = document.querySelector("#scoreboard tbody");
-    if (!tableHeader || !tableBody) return;
+  const [headers, ...rows] = data;
+  const tableHeader = document.getElementById("table-header");
+  const tableBody = document.querySelector("#scoreboard tbody");
+  if (!tableHeader || !tableBody) return;
 
-    const funFactIndex = headers.findIndex(h => h.toLowerCase().includes("fun"));
-    const leagueIndex = headers.findIndex(h => h.toLowerCase().includes("league"));
-    const totalIndex = headers.findIndex(h => h.toLowerCase().includes("total"));
-    const displayHeaders = headers.filter((_, i) => i !== funFactIndex);
+  const funFactIndex = headers.findIndex(h => h.toLowerCase().includes("fun"));
+  const leagueIndex = headers.findIndex(h => h.toLowerCase().includes("league"));
+  const totalIndex = headers.findIndex(h => h.toLowerCase().includes("total"));
 
-    const bestIndex = {};
+  const displayHeaders = headers.filter((_, i) => i !== funFactIndex);
+
+  const bestIndex = {};
+  displayHeaders.forEach(title => {
+    const colIndex = headers.findIndex(h => h === title);
+    let max = -Infinity;
+    rows.forEach(row => {
+      const val = parseFloat(row[colIndex]);
+      if (!isNaN(val) && val > max) max = val;
+    });
+    bestIndex[colIndex] = max;
+  });
+
+  tableHeader.innerHTML = "";
+  displayHeaders.forEach(title => {
+    const th = document.createElement("th");
+    th.textContent = title;
+    tableHeader.appendChild(th);
+  });
+
+  const sorted = rows
+    .filter(row => !isNaN(parseFloat(row[totalIndex])))
+    .sort((a, b) => b[totalIndex] - a[totalIndex]);
+
+  tableBody.innerHTML = "";
+  sorted.forEach((row, i) => {
+    const tr = document.createElement("tr");
     displayHeaders.forEach(title => {
-      const colIndex = headers.findIndex(h => h === title);
-      let max = -Infinity;
-      rows.forEach(row => {
-        const val = parseFloat(row[colIndex]);
-        if (!isNaN(val) && val > max) max = val;
-      });
-      bestIndex[colIndex] = max;
+      const idx = headers.findIndex(h => h === title);
+      const val = row[idx];
+      const td = document.createElement("td");
+
+      if (idx === leagueIndex && funFactIndex >= 0) {
+        td.innerHTML = `${i === 0 ? "👑 " : ""}${val} 🏈`;
+        td.title = row[funFactIndex] || "";
+        if (i === 0) td.classList.add("crown");
+      } else {
+        td.textContent = val ?? "-";
+      }
+
+      if (idx in bestIndex && parseFloat(val) === bestIndex[idx]) {
+        let badge = "";
+        const col = headers[idx].toLowerCase();
+        if (col.includes("dash")) badge = "🏃";
+        else if (col.includes("punt")) badge = "🏈";
+        else if (col.includes("3-point") || col.includes("3 point")) badge = "🏀";
+        else if (col.includes("arm") || col.includes("strongest")) badge = "💪";
+        else if (col.includes("beer") || col.includes("pong")) badge = "🍺";
+        if (badge) td.innerHTML += ` <span class="badge">${badge}</span>`;
+      }
+
+      tr.appendChild(td);
     });
-
-    tableHeader.innerHTML = "";
-    displayHeaders.forEach(title => {
-      const th = document.createElement("th");
-      th.textContent = title;
-      tableHeader.appendChild(th);
-    });
-
-    const sorted = rows
-      .filter(row => !isNaN(parseFloat(row[totalIndex])))
-      .sort((a, b) => b[totalIndex] - a[totalIndex]);
-
-    tableBody.innerHTML = "";
-    sorted.forEach((row, i) => {
-      const tr = document.createElement("tr");
-      displayHeaders.forEach(title => {
-        const idx = headers.findIndex(h => h === title);
-        const val = row[idx];
-        const td = document.createElement("td");
-
-        if (idx === leagueIndex && funFactIndex >= 0) {
-          td.innerHTML = `${i === 0 ? "👑 " : ""}${val} 🏈`;
-          td.title = row[funFactIndex] || "";
-          if (i === 0) td.classList.add("crown");
-        } else {
-          td.textContent = val ?? "-";
-        }
-
-        if (idx in bestIndex && parseFloat(val) === bestIndex[idx]) {
-          let badge = "";
-          const col = headers[idx].toLowerCase();
-          if (col.includes("dash")) badge = "🏃";
-          else if (col.includes("punt")) badge = "🏈";
-          else if (col.includes("3-point") || col.includes("3 point")) badge = "🏀";
-          else if (col.includes("arm") || col.includes("strongest")) badge = "💪";
-          else if (col.includes("beer") || col.includes("pong")) badge = "🍺";
-          if (badge) td.innerHTML += ` <span class="badge">${badge}</span>`;
-        }
-
-        tr.appendChild(td);
-      });
-      tableBody.appendChild(tr);
-    });
-  }
+    tableBody.appendChild(tr);
+  });
+}
 
   // 🚀 Launch Everything
   fetchScores();
