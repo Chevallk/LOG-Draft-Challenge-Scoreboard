@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -197,41 +198,23 @@
     </section>
   </main>
   <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-const app = initializeApp(firebaseConfig);
-import { getDatabase } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
-const db = getDatabase(app);
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+  import {
+    getDatabase, ref, set, push, onValue,
+    onChildAdded, update
+  } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
-import { ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
-const mediaRef = ref(db, "media");
-const mediaContainer = document.getElementById("media-container");
-
-// 1) Handle Uploadcare uploads
-uploadcare
-  .Widget('[role=uploadcare-uploader]')
-  .onUploadComplete(info => {
-    push(mediaRef, {
-      url: info.cdnUrl,
-      timestamp: Date.now()
-    });
-  });
-
-// 2) Render uploads as they arrive
-onChildAdded(mediaRef, snapshot => {
-  const { url } = snapshot.val();
-  const bubble = renderMediaCard(url, snapshot.key);
-  mediaContainer.appendChild(bubble);
-});
-
-const firebaseConfig = {
-  apiKey: "AIzaSyDxWpRXF8aMg31r-t27-pONNOB2iUJXYpe",
+  const firebaseConfig = {
+    const firebaseConfig = {
+  apiKey: "AIzaSyDxWpRXF8aMg31r-t27-pONNOB2iUJXYpg",
   authDomain: "log-live-chat.firebaseapp.com",
   databaseURL: "https://log-live-chat-default-rtdb.firebaseio.com",
   projectId: "log-live-chat",
-  storageBucket: "log-live-chat.appspot.com",
+  storageBucket: "log-live-chat.firebasestorage.app",
   messagingSenderId: "557426074509",
   appId: "1:557426074509:web:520a626d100bcd6db253c4",
-  };
+  measurementId: "G-BGNGWCFSH8"
+};
 
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
@@ -421,11 +404,6 @@ const firebaseConfig = {
 </script>
 </body>
 </html>
-
-
-
-
-
 
 
 
