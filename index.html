@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@700&display=swap" rel="stylesheet" />
   <script>
-    UPLOADCARE_PUBLIC_KEY = "f18e49d1ae9931d73110";
+    UPLOADCARE_PUBLIC_KEY = "36aca0ff7641024739f7";
   </script>
   <script src="https://ucarecdn.com/libs/widget/3.x/uploadcare.full.min.js"></script>
   <style>
@@ -197,25 +197,23 @@
     </section>
   </main>
   <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { onChildAdded } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-
-onChildAdded(ref(db, "media"), snapshot => {
-  const { url } = snapshot.val();
-  const img = document.createElement("img");
-  img.src = url;
-  document.body.appendChild(img);
-});
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+  import {
+    getDatabase, ref, set, push, onValue,
+    onChildAdded, update
+  } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
   const firebaseConfig = {
-  apiKey: "AIzaSyD0ppVwwFqN-p6UBHAyIXqZDpDN2FpLjR4",
-  authDomain: "log-draft-media.firebaseapp.com",
-  databaseURL: "https://log-draft-media-default-rtdb.firebaseio.com",
-  projectId: "log-draft-media",
-  storageBucket: "log-draft-media.firebasestorage.app",
-  messagingSenderId: "828676526244",
-  appId: "1:828676526244:web:2180bb8db02b69a6ded631",
+    apiKey: "AIzaSyDxWpRXF8aMg31r-t27-pONNOB2iUJXYpg",
+    authDomain: "log-live-chat.firebaseapp.com",
+    projectId: "log-live-chat",
+    storageBucket: "log-live-chat.appspot.com",
+    messagingSenderId: "557426074509",
+    appId: "1:557426074509:web:520a626d100bcd6db253c4"
   };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
 
   // 📸 Media Feed
   const mediaRef = ref(db, "media");
@@ -402,10 +400,3 @@ onChildAdded(ref(db, "media"), snapshot => {
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
