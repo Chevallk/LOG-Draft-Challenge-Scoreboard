@@ -213,6 +213,15 @@
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
 
+  uploadcare.Widget('[role=uploadcare-uploader]').onUploadComplete(info => {
+    const fileUrl = info.cdnUrl;
+    push(ref(db, "media"), {
+      url: fileUrl,
+      timestamp: Date.now()
+    });
+  });
+</script>
+
   // 📸 Media Feed
   const mediaRef = ref(db, "media");
   const mediaContainer = document.getElementById("media-container");
@@ -398,6 +407,7 @@
 </script>
 </body>
 </html>
+
 
 
 
