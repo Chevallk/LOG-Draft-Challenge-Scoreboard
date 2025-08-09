@@ -198,10 +198,9 @@
   </main>
   <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-  import {
-    getDatabase, ref, set, push, onValue,
-    onChildAdded, update
-  } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+const app = initializeApp(firebaseConfig);
+import { getDatabase } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+const db = getDatabase(app);
 
   const firebaseConfig = {
   apiKey: "AIzaSyDxWpRXF8aMg31r-t27-pONNOB2iUJXYpe",
@@ -211,8 +210,7 @@
   storageBucket: "log-live-chat.appspot.com",
   messagingSenderId: "557426074509",
   appId: "1:557426074509:web:520a626d100bcd6db253c4",
-  measurementId: "G-BGNWGFH5H8"
-};
+  };
 
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
@@ -402,6 +400,7 @@
 </script>
 </body>
 </html>
+
 
 
 
