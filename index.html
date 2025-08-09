@@ -204,12 +204,13 @@
   } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
   const firebaseConfig = {
-    apiKey: "AIzaSyDxWpRXF8aMg31r-t27-pONNOB2iUJXYpg",
-    authDomain: "log-live-chat.firebaseapp.com",
-    projectId: "log-live-chat",
-    storageBucket: "log-live-chat.appspot.com",
-    messagingSenderId: "557426074509",
-    appId: "1:557426074509:web:520a626d100bcd6db253c4"
+  apiKey: "AIzaSyDxWpRXF8aMg31r-t27-pONNOB2iUJXYpg",
+  authDomain: "log-live-chat.firebaseapp.com",
+  databaseURL: "https://log-live-chat-default-rtdb.firebaseio.com",
+  projectId: "log-live-chat",
+  storageBucket: "log-live-chat.firebasestorage.app",
+  messagingSenderId: "557426074509",
+  appId: "1:557426074509:web:520a626d100bcd6db253c4",
   };
 
   const app = initializeApp(firebaseConfig);
@@ -400,4 +401,5 @@
 </script>
 </body>
 </html>
+
 
