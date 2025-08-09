@@ -217,18 +217,6 @@ onChildAdded(ref(db, "media"), snapshot => {
   appId: "1:828676526244:web:2180bb8db02b69a6ded631",
   };
 
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
-
-  uploadcare.Widget('[role=uploadcare-uploader]').onUploadComplete(info => {
-    const fileUrl = info.cdnUrl;
-    push(ref(db, "media"), {
-      url: fileUrl,
-      timestamp: Date.now()
-    });
-  });
-</script>
-
   // 📸 Media Feed
   const mediaRef = ref(db, "media");
   const mediaContainer = document.getElementById("media-container");
@@ -414,6 +402,7 @@ onChildAdded(ref(db, "media"), snapshot => {
 </script>
 </body>
 </html>
+
 
 
 
