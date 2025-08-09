@@ -198,7 +198,14 @@
   </main>
   <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+  import { onChildAdded } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+onChildAdded(ref(db, "media"), snapshot => {
+  const { url } = snapshot.val();
+  const img = document.createElement("img");
+  img.src = url;
+  document.body.appendChild(img);
+});
 
   const firebaseConfig = {
   apiKey: "AIzaSyD0ppVwwFqN-p6UBHAyIXqZDpDN2FpLjR4",
@@ -407,6 +414,7 @@
 </script>
 </body>
 </html>
+
 
 
 
