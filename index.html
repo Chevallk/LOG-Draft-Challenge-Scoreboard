@@ -202,6 +202,27 @@ const app = initializeApp(firebaseConfig);
 import { getDatabase } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 const db = getDatabase(app);
 
+import { ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+const mediaRef = ref(db, "media");
+const mediaContainer = document.getElementById("media-container");
+
+// 1) Handle Uploadcare uploads
+uploadcare
+  .Widget('[role=uploadcare-uploader]')
+  .onUploadComplete(info => {
+    push(mediaRef, {
+      url: info.cdnUrl,
+      timestamp: Date.now()
+    });
+  });
+
+// 2) Render uploads as they arrive
+onChildAdded(mediaRef, snapshot => {
+  const { url } = snapshot.val();
+  const bubble = renderMediaCard(url, snapshot.key);
+  mediaContainer.appendChild(bubble);
+});
+
 const firebaseConfig = {
   apiKey: "AIzaSyDxWpRXF8aMg31r-t27-pONNOB2iUJXYpe",
   authDomain: "log-live-chat.firebaseapp.com",
@@ -400,6 +421,7 @@ const firebaseConfig = {
 </script>
 </body>
 </html>
+
 
 
 
